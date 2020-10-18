@@ -1,0 +1,254 @@
+select feed.cuid,
+       feed.timestamps,
+       concat('feed_',feed.act_name) as act_name,
+       -- res.hpb_category as event_query,
+       case when trim(res.hpb_category) = '0 ' then '综合'
+     when trim(res.hpb_category) = '1 ' then '国际'
+     when trim(res.hpb_category) = '2 ' then '国内'
+     when trim(res.hpb_category) = '3 ' then '体育'
+     when trim(res.hpb_category) = '4 ' then '娱乐'
+     when trim(res.hpb_category) = '5 ' then '社会'
+     when trim(res.hpb_category) = '6 ' then '财经'
+     when trim(res.hpb_category) = '7 ' then '互联网'
+     when trim(res.hpb_category) = '8 ' then '科技'
+     when trim(res.hpb_category) = '9 ' then '房产'
+     when trim(res.hpb_category) = '10 ' then '汽车'
+     when trim(res.hpb_category) = '11 ' then '教育'
+     when trim(res.hpb_category) = '12 ' then '时尚'
+     when trim(res.hpb_category) = '13 ' then '游戏'
+     when trim(res.hpb_category) = '14 ' then '军事'
+     when trim(res.hpb_category) = '15 ' then '旅游'
+     when trim(res.hpb_category) = '16 ' then '生活'
+     when trim(res.hpb_category) = '17 ' then '人文'
+     when trim(res.hpb_category) = '18 ' then '创意'
+     when trim(res.hpb_category) = '19 ' then '搞笑'
+     when trim(res.hpb_category) = '20 ' then '美图'
+     when trim(res.hpb_category) = '21 ' then '女人'
+     when trim(res.hpb_category) = '22 ' then '美食'
+     when trim(res.hpb_category) = '23 ' then '家居'
+     when trim(res.hpb_category) = '24 ' then '健康'
+     when trim(res.hpb_category) = '25 ' then '两性'
+     when trim(res.hpb_category) = '26 ' then '情感'
+     when trim(res.hpb_category) = '27 ' then '星座命理'
+     when trim(res.hpb_category) = '28 ' then '育儿'
+     when trim(res.hpb_category) = '29 ' then '文化'
+     when trim(res.hpb_category) = '30 ' then '历史'
+     when trim(res.hpb_category) = '31 ' then '宠物'
+     when trim(res.hpb_category) = '32 ' then '科学'
+     when trim(res.hpb_category) = '33 ' then '动漫'
+     when trim(res.hpb_category) = '34 ' then '职场'
+     when trim(res.hpb_category) = '35 ' then '三农'
+     when trim(res.hpb_category) = '36 ' then '本地'
+     when trim(res.hpb_category) = '37 ' then '悦读'
+else res.hpb_category end as event_query, 
+	
+	-- new_cat as query_l1_type,
+       case when nid_type='video' or resource_channel_id = 'sv' then coalesce(if(trim(new_cat)='' or trim(new_cat)='-',null,new_cat),res.category,if(trim(gr_news_category)='' or trim(gr_news_category)='-',null,gr_news_category)) else coalesce(if(trim(gr_news_category)='' or trim(gr_news_category)='-',null,gr_news_category),res.category,if(trim(new_cat)='' or trim(new_cat)='-',null,new_cat)) end as query_l1_type,
+      
+       -- new_sub_cat as query_l2_type,
+       case when nid_type='video' or resource_channel_id = 'sv' then coalesce(if(trim(new_sub_cat)='' or trim(new_sub_cat)='-',null,new_sub_cat),res.sub_category,if(trim(gr_news_sub_category)='' or trim(gr_news_sub_category)='-',null,gr_news_sub_category)) else coalesce(if(trim(gr_news_sub_category)='' or trim(gr_news_sub_category)='-',null,gr_news_sub_category),res.sub_category,if(trim(new_sub_cat)='' or trim(new_sub_cat)='-',null,new_sub_cat)) end as query_l2_type,
+       res.hpb_url,
+       res.hpb_title,
+       feed.spam_flag as filter_tag,
+       '0' as is_spam,
+       feed.channel,
+       case when trim(feed.os) = 'iphone' then 'ios' else feed.os end as os,
+       feed.event_app_version,
+       feed.province,
+       feed.city,
+       feed.ip,
+       feed.event_net_provider,
+       feed.network_access_mode,
+       feed.device_brand,
+       feed.event_device,
+       feed.tab_id,
+       map('source_type',feed.resource_channel_id,
+           'feed_dau',isdau,
+           'sub_type',log_sub_type,
+           'nid',nid, 
+           'rec_type',rec_type,
+           'sourcetime',res.sourcetime,-- 入库时间
+          
+           -- 'invalidTime',res.invalidTime,-- 失效时间
+
+           'publishtime',res.publishtime,-- 展现时间
+           'insertTime',res.insertTime,-- 作者收录时间
+           'hpb_log_type',hpb_log_type,
+           'hpb_feed_source_type',hpb_feed_source_type,
+           'page_flag',page_flag,
+           'extend_value',extend_value,
+           'pos',pos,
+           'nid_type',nid_type,
+           'rec_src',rec_src,
+           'type',e_g_type,
+           'audit_final_score',audit_final_score,
+           'final_score',final_score,
+           'gr_news_category',coalesce(gr_news_category,res.category,new_cat),
+           'gr_news_sub_category',coalesce(gr_news_sub_category,res.sub_category,new_sub_cat),
+           'is_microvideo',res.is_microvideo,-- 视频是否横屏1是0否
+           'big_img',res.big_img,-- 是否大图
+           'gk_tags',res.gk_tags,-- 资源tags和权重
+           'duration',duration,
+           'app_type',app_type,
+           'newstype',newstype,
+           'op_type',op_type,
+           'sources',sources,
+           'jumpTo',jumpTo) as attribute,
+       feed.sid_list,
+       feed.baiduid
+from 
+(select t.event_cuid as cuid,
+        case when isnotnull(t.event_time) then substr(t.event_time,12,8) else null end as timestamps,
+        t.log_type as act_name,
+       split(if(t.extend_result['source_nid'] is not null and t.extend_result['source_nid']!='-',t.extend_result['source_nid'],nid),'_')[size(split(if(t.extend_result['source_nid'] is not null and t.extend_result['source_nid']!='-',t.extend_result['source_nid'],nid),'_'))-1] as nid,
+       split(nid,'_')[0] as resource_channel_id,-- 新闻分类
+       t.event_channel as channel,
+       t.event_os as os,
+       t.event_app_version as event_app_version,
+       t.event_province as province,
+       t.event_city as city,
+       t.event_ip as ip,
+       t.event_net_provider as event_net_provider,
+       t.network_access_mode as network_access_mode,
+       t.event_brand as device_brand,
+       t.event_device as event_device,
+       case when t.log_type= 'slide_tab' then t.log_sub_type else t.attribute_list[0]['channel_id'] end as tab_id,-- 频道ID
+       extend_result['isdau'] as isdau,-- 是否dau
+       log_sub_type,
+       spam_flag,
+       new_cat,
+       new_sub_cat,
+       pos,
+       vertical_type,
+       mark,
+       mrtype,
+       rec_src,
+       gr_news_category,
+       gr_news_sub_category,
+       rec_type,
+       e_g_type,
+       audit_final_score,
+       final_score,
+       case when substr(nid,1,3) = 'ad1' then 'ad1'
+       when t.log_type in('click_landing','display_landing') and (template like 'mini_video%' or pd in ('feed','channel-na','mini-channel-na')) then 'mini_video' -- 小视频落地页
+       when t.log_type in('click_list_video','display_list_video') and channel_id = 'daren' then 'mini_video' -- 短视频中达人频道进入展现和点击
+       when t.log_type in('click_list_mini_video','display_list_mini_video') then 'mini_video' -- 小视频底部bar展现和点击
+       when t.log_type in('click_list_main','display_list_main') and template like 'mini_video%' then 'mini_video'-- 主列表页推荐小视频展现和点击
+       when vertical_type = 2 then 'gif' 
+       when nid like 'news_%' and mark in ('3','4') or  mrtype ='image'  then 'news_pic'
+       when nid like 'news_%' then 'news_text'
+	   when substr(nid,1,3) = 'sv_' then 'video'
+       when instr(nid,'_')>0 then if(split(nid,'_')[0] regexp '^[0-9]*$' or split(nid,'_')[0] regexp '^http.*','other',split(nid,'_')[0])
+	   else 'other' end as nid_type,
+       t.hpb_log_type,
+       t.hpb_feed_source_type,
+       t.page_flag,
+       t.extend_result['value'] as extend_value,
+       t.sid_list,
+       t.extend_result['baiduid'] as baiduid,
+       t.extend_result['duration'] as duration,
+       t.extend_result['app_type'] as app_type,
+       t.extend_result['newstype'] as newstype,
+       t.extend_result['op_type'] as op_type,
+       t.extend_result['source'] as sources,
+       t.extend_result['jumpTo'] as jumpTo,
+       split(rand()*30,'\\.')[0] as rand
+    from 
+        (select * from(
+        select * 
+                    from default.ud_ml_baiduapp_feed_session_data 
+                   where event_day = '{DATE}' 
+                     and size(nid_list)<>0
+                     and size(nid_list) = size(posid_list)
+                     and size(nid_list) = size(attribute_list)
+                     and log_type not in (
+                                 'refresh_list_tab',
+                                 'refresh_list_main',
+                                 'load_more',
+                                 'refresh_list_other')
+                     and nid_list is not null
+                     and posid_list is not null
+                     and attribute_list is not null
+                            )a lateral view nid_attribute(nid_list,attribute_list,posid_list)nid_list as nid,new_cat,new_sub_cat,pos,vertical_type,mark,mrtype,rec_src,gr_news_category,gr_news_sub_category,rec_type,template,pd,channel_id,e_g_type,audit_final_score,final_score
+            )t 
+	  )feed 
+left outer join 
+	(select *
+      from 
+      (select *,split('0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29',',') as rand
+      from ud_ml_feed_material_news_and_video 
+      where event_day='{DATE}')a 
+      lateral view explode(rand)tbl as rand_new
+      )res 
+on (res.hpb_nid = (case when isnotnull(feed.nid) and trim(feed.nid)<>'' and trim(feed.nid) <> '-' and trim(feed.nid) <> '-1' and length(trim(feed.nid)) > 10 then trim(feed.nid) else cast(ceiling(rand() * -65535) as string) end) and feed.rand=res.rand_new)
+union all
+select event_cuid as cuid,
+       case when isnotnull(event_time) then substr(event_time,12,8) else null end as timestamps,
+       concat('feed_',log_type) as act_name,
+       null as event_query,
+	   null as query_l1_type,
+       null as query_l2_type,
+       null as hpb_url,
+       null as hpb_title,
+       spam_flag as filter_tag,
+       '0' as is_spam,
+       event_channel as channel,
+       case when trim(event_os) = 'iphone' then 'ios' else trim(event_os) end as os,
+       event_app_version as event_app_version,
+       event_province as province,
+       event_city as city,
+       event_ip as ip,
+       event_net_provider as event_net_provider,
+       network_access_mode as network_access_mode,
+       event_brand as device_brand,
+       event_device as event_device,
+       case when log_type= 'slide_tab' then log_sub_type else attribute_list[0]['channel_id'] end as tab_id,
+       map('source_type',split(nid_list[0],'_')[0],'feed_dau',extend_result['isdau'],'sub_type',log_sub_type,'refresh_nids',size(nid_list),'hpb_log_type',hpb_log_type,'hpb_feed_source_type',hpb_feed_source_type,'page_flag',page_flag,'extend_value',extend_result['value'],'pos','-')  as attribute,
+      sid_list,
+      extend_result['baiduid'] as baiduid
+   from default.ud_ml_baiduapp_feed_session_data 
+  where event_day = '{DATE}' 
+    and log_type in (
+         'refresh_list_tab',
+         'refresh_list_main',
+         'load_more',
+         'refresh_list_other')
+    and nid_list is not null
+    and posid_list is not null
+    and attribute_list is not null
+union all
+select event_cuid as cuid,
+       case when isnotnull(event_time) then substr(event_time,12,8) else null end as timestamps,  --event_day  string形式记录的时间信息  第三个字段
+       concat('feed_',log_type) as act_name,  ----如：feed_interact_other 日志类型  20
+       null as event_query,
+	   null as query_l1_type,
+       null as query_l2_type,
+       null as hpb_url,
+       null as hpb_title,
+       spam_flag as filter_tag,    --反作弊策略标记的异常行为 33
+       '0' as is_spam,             --行为作弊标签：0非作弊；1作弊
+       event_channel as channel,    - 当前渠道号    17
+       case when trim(event_os) = 'iphone' then 'ios' else trim(event_os) end as os,    --平台  iphone/android 4
+       event_app_version as event_app_version,   --app版本 6
+       event_province as province,   --根据IP获取的省份名称 11
+       event_city as city,    --根据IP获取的城市名称 10
+       event_ip as ip,     --点分格式记录的IPV4地址 15
+       event_net_provider as event_net_provider,    --基于IP计算的运营商  16
+       network_access_mode as network_access_mode,   --网络类型   18
+       event_brand as device_brand,   --手机的品牌  14
+       event_device as event_device,    --来源于UserAgent的设备名  15
+       case when log_type= 'slide_tab' then log_sub_type else attribute_list[0]['channel_id'] end as tab_id,    --log_type:日志类型    20 --attribute_list：扩展字段 扩展字段   27  array<map<string,string>>
+       map('feed_dau',extend_result['isdau'],'sub_type',log_sub_type,'duration',extend_result['duration'],'hpb_log_type',hpb_log_type,'hpb_feed_source_type',hpb_feed_source_type,'page_flag',page_flag,'extend_value',extend_result['value'],'pos','-') as attribute,
+      sid_list,   --抽样id list   ['292_607', '257_538']  array<string>
+      extend_result['baiduid'] as baiduid    --其他的扩展字段 map<string,string>   29
+from default.ud_ml_baiduapp_feed_session_data 
+where event_day = '{DATE}' 
+    and size(nid_list) = 0 
+    and log_type not in (
+         'refresh_list_tab',
+         'refresh_list_main',
+         'load_more',
+         'refresh_list_other')
+    and nid_list is not null
+    and posid_list is not null
+    and attribute_list is not null

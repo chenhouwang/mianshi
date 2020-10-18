@@ -1,0 +1,85 @@
+安装有可能会出现的问题：
+
+1、hadoop中的yarn集群中的jar包会和hive中的jar包冲突
+
+	${HADOOP_HOME}/share/hadoop/yarn/lib/jline.0.9.4.jar  
+	和
+	${HIVE_HOME}/lib/jline-2.12.jar
+	冲突
+
+	解决方案： 替换掉 yarn 中的这个jline包为 hive中的 2.12版本的jar包即可
+
+
+2、使用hive命令启动CLI时报错
+
+	解决方案：
+
+	1、查看集群是否启动正常。   mysql 和 hadoop
+
+	2、确认mysql的远程连接权限是否正常
+
+		如果mysql和hive安装在同一个节点，
+		那么应该相应给mysql增加当前节点的主机名的远程连接权限
+		或者把hive中的hive-site.xml中配置的mysql的主机名改写成localhost也行
+
+	3、.....
+
+3、schematool 命令执行过程中，报错
+
+	解决方案同2.2
+
+4、基于同一个hadoop集群。安装多个不同的hive数据仓库
+
+	注意事项：
+
+	1、元数据库 不能使用同一个
+	2、默认的数据仓库路径必须更改为不同的目录
+
+5、hieserver2 服务的连接异常 ---> HDFS的权限问题
+
+	解决方案:
+
+	在hadoop集群中的core-site.xml配置文件中添加以下两项配置;
+
+	<property>
+		  <name>hadoop.proxyuser.hadoop.hosts</name>
+		  <value>*</value>
+	 </property>
+	 <property>
+		  <name>hadoop.proxyuser.hadoop.groups</name>
+		  <value>*</value>
+	</property>
+
+	hadoop.proxyuser 表示配置hadoop集群的访问代理用户
+	hadoop.proxyuser.hadoop 中的后一个hadoop表示代理用户hadoop
+	hosts 表示任意主机可连接
+	groups 表示任意组
+
+
+6、.......
+
+	如果配置了第5步中的操作，
+
+	直接使用beeline能够连接上hiveserver2服务的原因：
+
+	1、${HIVE_HOME}/conf/beeline-hs2-connection.xml
+
+	里面内容：
+
+	<?xml version="1.0"?>
+	<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+	<configuration>
+	<property>
+	  <name>beeline.hs2.connection.user</name>
+	  <value>hadoop</value>
+	</property>
+	<property>
+	  <name>beeline.hs2.connection.password</name>
+	  <value>hadoop</value>
+	</property>
+	</configuration>
+
+	2、把hive-site.xml 放入 到  ${HIVE_HOME}/lib
+
+
+直接使用beeline命令就可以连接上hiveserver2服务了。

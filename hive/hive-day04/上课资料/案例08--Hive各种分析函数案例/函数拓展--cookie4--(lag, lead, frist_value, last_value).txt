@@ -1,0 +1,185 @@
+// 数据准备:  cookie4.txt
+cookie1,2015-04-10 10:00:02,url2
+cookie1,2015-04-10 10:00:00,url1
+cookie1,2015-04-10 10:03:04,1url3
+cookie1,2015-04-10 10:50:05,url6
+cookie1,2015-04-10 11:00:00,url7
+cookie1,2015-04-10 10:10:00,url4
+cookie1,2015-04-10 10:50:01,url5
+cookie2,2015-04-10 10:00:02,url22
+cookie2,2015-04-10 10:00:00,url11
+cookie2,2015-04-10 10:03:04,1url33
+cookie2,2015-04-10 10:50:05,url66
+cookie2,2015-04-10 11:00:00,url77
+cookie2,2015-04-10 10:10:00,url44
+cookie2,2015-04-10 10:50:01,url55
+
+
+// 建表语句：
+create database if not exists myhive;
+use myhive;
+drop table if exists cookie4;
+create table cookie4(cookieid string, createtime string, url string) row format delimited fields terminated by ',';
+load data local inpath "/home/hadoop/cookie4.txt" into table cookie4;
+select * from cookie4;
+
+
+
+LAG
+LAG(col,n,DEFAULT) 用于统计窗口内往上第n行值
+第一个参数为列名，
+第二个参数为往上第n行（可选，默认为1），
+第三个参数为默认值（当往上第n行为NULL时候，取默认值，如不指定，则为NULL）
+
+// SQL语句：
+SELECT cookieid, createtime, url,
+    ROW_NUMBER() OVER(PARTITION BY cookieid ORDER BY createtime) AS rn,
+    LAG(createtime,1,'1970-01-01 00:00:00') OVER(PARTITION BY cookieid ORDER BY createtime) AS last_1_time,
+    LAG(createtime,2) OVER(PARTITION BY cookieid ORDER BY createtime) AS last_2_time 
+FROM cookie4;
+
+// 结果：
+cookieid createtime                     url    rn       last_1_time                  last_2_time
+
+cookie1 2015-04-10 10:00:00     url1    1       1970-01-01 00:00:00     NULL
+cookie1 2015-04-10 10:00:02     url2    2       2015-04-10 10:00:00     NULL
+cookie1 2015-04-10 10:03:04     1url3   3       2015-04-10 10:00:02     2015-04-10 10:00:00
+cookie1 2015-04-10 10:10:00     url4    4       2015-04-10 10:03:04     2015-04-10 10:00:02
+cookie1 2015-04-10 10:50:01     url5    5       2015-04-10 10:10:00     2015-04-10 10:03:04
+cookie1 2015-04-10 10:50:05     url6    6       2015-04-10 10:50:01     2015-04-10 10:10:00
+cookie1 2015-04-10 11:00:00     url7    7       2015-04-10 10:50:05     2015-04-10 10:50:01
+cookie2 2015-04-10 10:00:00     url11   1       1970-01-01 00:00:00     NULL
+cookie2 2015-04-10 10:00:02     url22   2       2015-04-10 10:00:00     NULL
+cookie2 2015-04-10 10:03:04     1url33  3       2015-04-10 10:00:02     2015-04-10 10:00:00
+cookie2 2015-04-10 10:10:00     url44   4       2015-04-10 10:03:04     2015-04-10 10:00:02
+cookie2 2015-04-10 10:50:01     url55   5       2015-04-10 10:10:00     2015-04-10 10:03:04
+cookie2 2015-04-10 10:50:05     url66   6       2015-04-10 10:50:01     2015-04-10 10:10:00
+cookie2 2015-04-10 11:00:00     url77   7       2015-04-10 10:50:05     2015-04-10 10:50:01
+
+解释：
+last_1_time: 指定了往上第1行的值，default为'1970-01-01 00:00:00'  
+             cookie1第一行，往上1行为NULL,因此取默认值 1970-01-01 00:00:00
+             cookie1第三行，往上1行值为第二行值，2015-04-10 10:00:02
+             cookie1第六行，往上1行值为第五行值，2015-04-10 10:50:01
+last_2_time: 指定了往上第2行的值，为指定默认值
+						 cookie1第一行，往上2行为NULL
+						 cookie1第二行，往上2行为NULL
+						 cookie1第四行，往上2行为第二行值，2015-04-10 10:00:02
+						 cookie1第七行，往上2行为第五行值，2015-04-10 10:50:01
+
+
+
+LEAD
+与LAG相反
+LEAD(col,n,DEFAULT) 用于统计窗口内往下第n行值
+第一个参数为列名，
+第二个参数为往下第n行（可选，默认为1），
+第三个参数为默认值（当往下第n行为NULL时候，取默认值，如不指定，则为NULL）
+
+
+// SQL语句：
+SELECT cookieid, createtime, url,
+ROW_NUMBER() OVER(PARTITION BY cookieid ORDER BY createtime) AS rn,
+LEAD(createtime,1,'1970-01-01 00:00:00') OVER(PARTITION BY cookieid ORDER BY createtime) AS next_1_time,
+LEAD(createtime,2) OVER(PARTITION BY cookieid ORDER BY createtime) AS next_2_time 
+FROM cookie4;
+
+// 结果：
+cookieid createtime             url    rn       next_1_time             next_2_time
+
+cookie1 2015-04-10 10:00:00     url1    1       2015-04-10 10:00:02     2015-04-10 10:03:04
+cookie1 2015-04-10 10:00:02     url2    2       2015-04-10 10:03:04     2015-04-10 10:10:00
+cookie1 2015-04-10 10:03:04     1url3   3       2015-04-10 10:10:00     2015-04-10 10:50:01
+cookie1 2015-04-10 10:10:00     url4    4       2015-04-10 10:50:01     2015-04-10 10:50:05
+cookie1 2015-04-10 10:50:01     url5    5       2015-04-10 10:50:05     2015-04-10 11:00:00
+cookie1 2015-04-10 10:50:05     url6    6       2015-04-10 11:00:00     NULL
+cookie1 2015-04-10 11:00:00     url7    7       1970-01-01 00:00:00     NULL
+cookie2 2015-04-10 10:00:00     url11   1       2015-04-10 10:00:02     2015-04-10 10:03:04
+cookie2 2015-04-10 10:00:02     url22   2       2015-04-10 10:03:04     2015-04-10 10:10:00
+cookie2 2015-04-10 10:03:04     1url33  3       2015-04-10 10:10:00     2015-04-10 10:50:01
+cookie2 2015-04-10 10:10:00     url44   4       2015-04-10 10:50:01     2015-04-10 10:50:05
+cookie2 2015-04-10 10:50:01     url55   5       2015-04-10 10:50:05     2015-04-10 11:00:00
+cookie2 2015-04-10 10:50:05     url66   6       2015-04-10 11:00:00     NULL
+cookie2 2015-04-10 11:00:00     url77   7       1970-01-01 00:00:00     NULL
+
+
+
+FIRST_VALUE
+取分组内排序后，截止到当前行，第一个值
+
+
+// SQL语句：
+SELECT cookieid, createtime, url,
+    ROW_NUMBER() OVER(PARTITION BY cookieid ORDER BY createtime) AS rn,
+    FIRST_VALUE(url) OVER(PARTITION BY cookieid ORDER BY createtime) AS first1 
+FROM cookie4;
+
+// 结果：
+cookie1 2015-04-10 10:00:00     url1    1       url1
+cookie1 2015-04-10 10:00:02     url2    2       url1
+cookie1 2015-04-10 10:03:04     1url3   3       url1
+cookie1 2015-04-10 10:10:00     url4    4       url1
+cookie1 2015-04-10 10:50:01     url5    5       url1
+cookie1 2015-04-10 10:50:05     url6    6       url1
+cookie1 2015-04-10 11:00:00     url7    7       url1
+cookie2 2015-04-10 10:00:00     url11   1       url11
+cookie2 2015-04-10 10:00:02     url22   2       url11
+cookie2 2015-04-10 10:03:04     1url33  3       url11
+cookie2 2015-04-10 10:10:00     url44   4       url11
+cookie2 2015-04-10 10:50:01     url55   5       url11
+cookie2 2015-04-10 10:50:05     url66   6       url11
+cookie2 2015-04-10 11:00:00     url77   7       url11
+
+LAST_VALUE
+取分组内排序后，截止到当前行，最后一个值
+
+// SQL语句：
+SELECT cookieid, createtime, url,
+    ROW_NUMBER() OVER(PARTITION BY cookieid ORDER BY createtime) AS rn,
+    LAST_VALUE(url) OVER(PARTITION BY cookieid ORDER BY createtime) AS last1 
+FROM cookie4;
+
+// 结果：
+cookie1 2015-04-10 10:00:00     url1    1       url1
+cookie1 2015-04-10 10:00:02     url2    2       url2
+cookie1 2015-04-10 10:03:04     1url3   3       1url3
+cookie1 2015-04-10 10:10:00     url4    4       url4
+cookie1 2015-04-10 10:50:01     url5    5       url5
+cookie1 2015-04-10 10:50:05     url6    6       url6
+cookie1 2015-04-10 11:00:00     url7    7       url7
+cookie2 2015-04-10 10:00:00     url11   1       url11
+cookie2 2015-04-10 10:00:02     url22   2       url22
+cookie2 2015-04-10 10:03:04     1url33  3       1url33
+cookie2 2015-04-10 10:10:00     url44   4       url44
+cookie2 2015-04-10 10:50:01     url55   5       url55
+cookie2 2015-04-10 10:50:05     url66   6       url66
+cookie2 2015-04-10 11:00:00     url77   7       url77
+
+问题：如果不指定ORDER BY，则默认按照记录在文件中的偏移量进行排序，会出现错误的结果
+
+
+
+// 求得每组的最后一个值： 排倒序，然后取FIRST_VALUE
+
+SELECT cookieid, createtime, url,
+    ROW_NUMBER() OVER(PARTITION BY cookieid ORDER BY createtime) AS rn,
+    LAST_VALUE(url) OVER(PARTITION BY cookieid ORDER BY createtime) AS last1,
+    FIRST_VALUE(url) OVER(PARTITION BY cookieid ORDER BY createtime DESC) AS last2 
+FROM cookie4 
+ORDER BY cookieid,createtime;
+
+
+cookie1 2015-04-10 10:00:00     url1    1       url1    url7
+cookie1 2015-04-10 10:00:02     url2    2       url2    url7
+cookie1 2015-04-10 10:03:04     1url3   3       1url3   url7
+cookie1 2015-04-10 10:10:00     url4    4       url4    url7
+cookie1 2015-04-10 10:50:01     url5    5       url5    url7
+cookie1 2015-04-10 10:50:05     url6    6       url6    url7
+cookie1 2015-04-10 11:00:00     url7    7       url7    url7
+cookie2 2015-04-10 10:00:00     url11   1       url11   url77
+cookie2 2015-04-10 10:00:02     url22   2       url22   url77
+cookie2 2015-04-10 10:03:04     1url33  3       1url33  url77
+cookie2 2015-04-10 10:10:00     url44   4       url44   url77
+cookie2 2015-04-10 10:50:01     url55   5       url55   url77
+cookie2 2015-04-10 10:50:05     url66   6       url66   url77
+cookie2 2015-04-10 11:00:00     url77   7       url77   url77

@@ -1,0 +1,2 @@
+员工编号	姓名	     职务	     领导编号	    入职日期	  薪资	  地区编号
+id	        name	     position      leaderid          entrydate	  salary	  district

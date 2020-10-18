@@ -1,0 +1,60 @@
+用户信息表
+
+create database if not exists hive_test;
+use hive_test;
+drop table if exists rownumbertest;
+create table rownumbertest(id int, xb string, age int, name string) row format delimited fields terminated by ",";
+load data local inpath "/home/hadoop/rownumbertest.txt" into table rownumbertest;
+select * from rownumbertest;
+
+
+rownumbertest.txt：
+id,xb,age,name
+1,男,18,张三
+2,女,18,李四
+3,女,20,王五
+4,男,18,赵六
+5,男,18,刘七
+6,男,19,石九
+7,男,38,黄渤
+8,女,22,刘嘉玲
+9,女,23,王菲
+10,女,28,刘亦菲
+11,女,18,赵丽颖
+
+
+每种性别人群中，年龄最大的两个人
+
+
+select id,xb,age,name, row_number() over (partition by xb order by age desc) as index from rownumbertest;
+
++-----+-----+------+-------+--------+
+| id  | xb  | age  | name  | index  |
++-----+-----+------+-------+--------+
+| 10  | 女   | 28   | 刘亦菲   | 1      |
+| 9   | 女   | 23   | 王菲    | 2      |
+| 8   | 女   | 22   | 刘嘉玲   | 3      |
+| 3   | 女   | 20   | 王五    | 4      |
+| 11  | 女   | 18   | 赵丽颖   | 5      |
+| 2   | 女   | 18   | 李四    | 6      |
+| 7   | 男   | 38   | 黄渤    | 1      |
+| 6   | 男   | 19   | 石九    | 2      |
+| 5   | 男   | 18   | 刘七    | 3      |
+| 4   | 男   | 18   | 赵六    | 4      |
+| 1   | 男   | 18   | 张三    | 5      |
++-----+-----+------+-------+--------+
+
+
+
+select * from (select id,xb,age,name, row_number() over (partition by xb order by age desc) as index from rownumbertest) abc where abc.index <= 3;
+
++---------+---------+----------+-----------+------------+
+| abc.id  | abc.xb  | abc.age  | abc.name  | abc.index  |
++---------+---------+----------+-----------+------------+
+| 10      | 女       | 28       | 刘亦菲       | 1          |
+| 9       | 女       | 23       | 王菲        | 2          |
+| 8       | 女       | 22       | 刘嘉玲       | 3          |
+| 7       | 男       | 38       | 黄渤        | 1          |
+| 6       | 男       | 19       | 石九        | 2          |
+| 5       | 男       | 18       | 刘七        | 3          |
++---------+---------+----------+-----------+------------+

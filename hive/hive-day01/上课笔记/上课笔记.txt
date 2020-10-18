@@ -1,0 +1,484 @@
+马云：
+	码云 被阿里给封杀了
+马：骉骉biao老师：Hive数据分析
+
+课程大纲：hive数据分析
+总共：5次课
+
+第一天的课程内容大纲：
+1、为什么要使用大数据分析技术？
+2、Hive的前世今生
+3、Hive的基础理论知识和数据仓库
+4、Hive的环境搭建
+5、Hive的基本使用
+
+之后的内容：常见的各种使用方式和语法，企业级的实战，面试题
+
+HDFS：分布式的文件系统
+搭建环境
+分布式软件 
+
+
+Hive？蜂巢  logo 蜜蜂
+数据 --- 蜜蜂
+hive     蜂巢
+基于hadoop的数据仓库工具
+
+
+MySQL  结构化的数据  表  SQL语言  CRUD  增删改查
+
+弊端？
+如果数据量变得非常的大，那么mysql在处理的时候，就会非常吃力
+
+数据量变大：大数据技术
+
+如果仅仅是因为数据量变大。SQL  MySQL
+Hive：底层可以存储大量的结构化数据，简单来说，你可以把它看做是一个MySQL
+
+
+mysql		    hive
+数据库系统      数据仓库
+增删改          查
+小              大
+
+公共点：都是使用SQL的语法来进行数据的操作：（增删改查）
+
+侧重于关于大批量数据集的查询分析操作
+
+大数据分析：数据仓库工具；hive
+
+Hadoop基础知识：分布式平台：分布式的操作系统：是有多台服务器组成的一个大型的操作系统
+1、HDFS		海量数据的存储问题
+2、MapReduce	海量数据的计算问题
+3、YARN		海量服务器计算资源的管理问题
+3、RPC		分布式环境中的通信问题框架
+
+
+MapReduce： 分布式编程框架/分布式计算引擎
+通俗的解释：不管你数据是什么格式，不管是数据在那里，不管你数巨量有多大，不管计算的类型是什么，我MapReduce都能计算
+作用和意义：原来不能计算的海量数据，现在有mapreduce之后就能算了
+
+Google 谷歌  解决海量数据的PageRank这个算法的执行！
+
+致命的缺点：执行效率很低。相比后来出现的一些执行效率高很多的分布式计算引擎来说
+
+假设现在有一个文件：hello.txt
+hello huangbo
+hello xuzheng
+hello wangbaoqiang 
+单词统计：
+hello 3
+huangbo 1
+xuzheng 1
+wangbaoqiang 1
+
+如果编写mapreduce程序，计算的时候需要大概30-60s钟的时间
+杀鸡用牛刀！
+
+海量数据：mapreduce的真正优势是用来计算海量数据。但是执行效率低
+编写很复杂！
+
+一般的入门程序，都是一行代码搞定。
+MapReduce的入门程序：120行
+
+mapreduce能做的事，大部分都可以使用SQL语法来搞定！
+
+
+要处理的数据是越来越大！
+
+10M
+1GB
+1TB
+1PB
+1EB
+
+MYSQL的能力是远远不够的。而且mysql的设计目的：做增删改。 
+DBA是不希望你写查询语句。低效率的查询！
+
+
+hive		mysql
+结构化		结构化
+大		     小
+查		    增删改
+SQL方言		SQL标准
+方言		普通话
+mapreduce	innodb...
+...
+
+hive
+
+
+Hive概念：
+1、Hive 由 Facebook 实现并开源
+	google研发出来了mapreudce，但是只发表了论文。不开放源码
+	yahoo 根据论文找大牛 研发了这个 mapreduce
+	facebook 封装了，提供了类似于SQL的使用方式
+	hive是一个开放源码的软件，ASF托管！ apache基金会
+
+	阿里的dubbo  阿里云：OaceanBase RDBMS 关系型数据库 类似于MySQL
+	性能是世界上最厉害的RDBMS（oracle）的性能的两倍！
+
+
+2、Hive 是基于 Hadoop 的一个数据仓库工具
+
+	单独的hive没有意义
+	hive的唯一功能：翻译：
+		SQL ----->  MapReduce
+
+3、Hive 存储的数据其实底层存储在 HDFS 上
+	
+	HDFS为hive存储数据，Hive委托HDFS存储数据
+
+4、Hive 将 HDFS 上的结构化的数据映射为一张数据库表
+
+	HIVE能使用SQL的方式来处理结构化数据
+	那就证明：hive其实是把结构化数据看做是类似于mysql的表
+
+5、Hive 提供 HQL(Hive SQL)查询功能
+	
+	类SQL语言：SQL方言： Hive SQL : 简称HQL
+
+6、Hive 的本质是将 SQL 语句转换为 MapReduce 任务运行，使不熟悉 MapReduce 的用户很
+方便地利用 HQL 处理和计算 HDFS 上的结构化的数据，适用于离线的批量数据计算
+
+	原理：SQL -----> MapReduce
+			缺点:
+				执行效率低
+				学习困难高
+				编写复杂高
+	
+	hive: 数据仓库  存储  改
+
+	结果数据：
+	1、如果是少量的关键数据，可以存放在mysql
+	2、如果是大量数据：mysql、oracle， redis/memcache,  hbase,cassandra
+	主要根据业务来决定！
+
+	hive侧重查询：
+	select * from xxtable where id = ?  不是用来干这个的事
+
+	统计分析！
+	聚合分析：
+		group by 
+		max,min,avg,count,sum,distinct，。。。。
+
+	// 统计每个部门有多少人
+	select department, count(*) as total from student group by department;
+
+7、Hive 使用户可以极大简化分布式计算程序的编写，而将精力集中于业务逻辑
+
+	作用： 提高开发效率， 并没有提高程序的执行效率！
+
+
+官网：介绍
+http://hive.apache.org
+
+Apache Hive™数据仓库软件支持使用SQL读取、写入和管理分布存储中的大型数据集。结构可以映射到存储中的数据。提供了一个命令行工具和JDBC驱动程序来将用户连接到Hive。
+
+咱们遇到了海量的结构化数据，要做统计分析，行业使用hive的场景非常多！
+
+
+hive		mysql
+侧重：查	侧重：增删改
+不支持：删改	支持：查询
+查询分析	事务操作
+
+事务性操作：增删改
+非事务操作：查询
+
+
+Hive的使用场景：只适合做海量结构化数据的统计分析！  SQL查询语句！
+
+
+
+hive的内部架构：
+
+1、用户接口
+	提供给用户的几种使用方式
+2、执行引擎
+	内部的执行机制
+3、元数据库
+	既然hive把存储在HDFS上的结构化数据看做是一张类似于mysql的表
+	这张表叫什么名字，有哪些字段，字段都是什么类型，都需要记下来，方便后续使用
+	这些数据就称之为元数据，存储在mysql等的RDBMS中
+4、thriftserver
+
+
+
+hive基于hadoop:
+hadoop为hive给提供了以下三个组件：
+1、hdfs		我帮你存
+2、mapreduce	我帮你算
+3、yarn		我帮你调度资源
+
+
+
+excel  mysql   hdfs
+
+
+
+mysql			hive
+数据库			数据库
+数据表			数据表
+字段			字段
+视图			视图
+索引			索引（老版本不支持）
+....
+
+
+使用表的形式来组织数据！  SQL的方式来操作！
+
+
+mysql： 普通表
+	create database if not exists mydb;
+
+背景：hive的数据有两种：元数据（mysql）  真实数据（HDFS）
+hive:
+	内部表
+	外部表
+		语法：
+		创建：
+		create  [external]  table
+		create external table：外部表
+		create table：外部表
+
+		删除：
+		1、内部表：删除表的时候，删除了元数据，也删除了真实数据
+		2、外部表：删除表的时候，只删除了元数据，不删除真实数据
+
+		如果真实数据文件是公用的。你也用我也用。
+
+	背景：hive是用来解决海量结构化数据的计算问题
+		由于数据量很大，想做全表扫描的那种查询分析，难度会很高
+		把一张大表拆分成很多小的分区来执行对应的计算
+	分区表
+		把一张大表拆分成多个独立的小单元
+		把一个大文件拆分成多个小文件，存放在多个不同的文件夹下
+	分桶表
+		把一张大表拆分成多个独立的小单元
+		把一个大文件拆分成多个小文件，存放在同一个文件夹下
+
+	目的：为了提高执行效率的，避免全表扫描！
+		
+
+
+为什么要用hive
+hive是什么了
+hive的内部架构
+hive的数据存储
+
+
+环境搭建
+一套使用流程的基本介绍代码演示
+
+
+
+搭建环境：心法
+1、依赖环境的准备
+	hadoop
+	mysql
+2、版本选择
+	apache-hive-xxx
+		hive-1.x
+			hive-1.2.1
+		hive-2.x
+			hive-2.1
+	核心选择因素：
+		选择不新不旧的稳定版本
+			选择某个中间大版本的最后一个小版本！
+			hive-1.2 大半本
+			hive-1.2.3 小版本
+			xxxx-x.y.z
+				x.y  大半本
+				z  小版本
+3、正式安装
+	windows
+		开发，测试，等使用windows相对都少见了。
+	linux
+		开发，测试，线上生产
+	
+
+hive-2.3.4
+mysql
+hadoop
+linux
+
+数据分析：
+侧重于写业务分析的SQL语句。也就是说，大部分的场景都是用来干嘛的：写SQL查询
+
+在企业中，极有可能不需要你去管环境的环境
+但是现在我们处于学习阶段：必须要安装环境
+
+
+
+正式安装: 核心心法
+1、从官网下载合适的版本，自行编译
+2、解压缩安装到linux中的合适目录中
+3、如果有需要的话，就更改配置文件
+4、测试安装是否成功
+
+
+ 
+我的mysql：
+	hadoop02 
+
+我的hadoop集群
+	HDFS
+	高可用的集群（是不是高可用集群无所谓，只要是分布式即可，只要HDFS可以用即可）
+		主节点：
+			hadoop02, hadoop03
+		从节点：
+			hadoop02，hadoop03，hadoop04，hadoop05
+	
+	yarn
+		主节点：
+			hadoop04, hadoop05
+		从节点：
+			hadoop02，hadoop03，hadoop04，hadoop05
+		
+	提交一个MR程序：
+	hadoop jar hadoop-mapreduce-examples-2.7.6.jar pi 5 4
+
+
+
+依赖环境准备OK ，接下来正式安装hive
+
+1、下载
+2、解压缩
+	tar -zxvf apache-hive-2.3.4-bin.tar.gz -C apps/
+3、修改配置
+	hive-site.xml
+		放入核心信息
+	hive要依赖于mysql，所以你要指定mysql在那里！
+
+	必须要把java的关于mysql的驱动jar包放在hive的安装目录中的lib目录中
+	cp mysql-connector-java-5.1.40-bin.jar apps/apache-hive-2.3.4-bin/lib/
+
+4、测试是否安装成功
+
+	最好配置一下环境变量
+	export HIVE_HOME=/home/hadoop/apps/apache-hive-2.3.4-bin
+	export PATH=$PATH:$HIVE_HOME/bin
+	
+	第一步：先要初始化元数据库
+		schematool -dbType mysql -initSchema
+
+
+核心配置信息：把以下这段信息直接拷贝复制到hive-site.xml中即可！
+<configuration>
+<property>
+	<name>javax.jdo.option.ConnectionURL</name>
+	<value>jdbc:mysql://hadoop02:3306/hivedb0909?createDatabaseIfNotExist=true</value>
+	<!-- 如果mysql和hive在同一个服务器节点，那么请更改hadoop02为localhost  -->
+	<description>连接MySQL的URL（jdbc:mysql://是固定的，hadoop02（主机名/IP地址，:3306也是固定的就是端口号，hivedb0909数据库名字））</description>
+</property>
+
+<property>
+	<name>javax.jdo.option.ConnectionDriverName</name>
+	<value>com.mysql.jdbc.Driver</value>
+	<description>驱动类</description>
+</property>
+
+<property>
+	<name>javax.jdo.option.ConnectionUserName</name>
+	<value>root</value>
+	<description>连接mysql数据库的用户名</description>
+</property>
+
+<property>
+	<name>javax.jdo.option.ConnectionPassword</name>
+	<value>root</value>
+	<description>连接密码</description>
+</property>
+</configuration>
+
+
+
+初始化成功的标志：
+[hadoop@hadoop03 ~]$ schematool -dbType mysql -initSchema
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/hadoop/apps/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/hadoop/apps/hadoop-2.7.6/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+Metastore connection URL:        jdbc:mysql://hadoop02:3306/hivedb0909?createDatabaseIfNotExist=true
+Metastore Connection Driver :    com.mysql.jdbc.Driver
+Metastore connection User:       root
+Starting metastore schema initialization to 2.3.0
+Initialization script hive-schema-2.3.0.mysql.sql
+Initialization script completed
+schemaTool completed
+[hadoop@hadoop03 ~]$ 
+
+
+这个57个表，是hive自己创建的用来去管理hive数据仓库中的所有的元数据的
+这些表你不能改！
+
+一般在生产环境中，你也不知道这个数据库在那里
+不要把这个库的操作权限泄露出去。
+
+基本使用：
+
+第一步：先进入hive的操作使用环境
+hive
+
+启动成功的标志：
+[hadoop@hadoop03 ~]$ hive
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/home/hadoop/apps/apache-hive-2.3.4-bin/lib/log4j-slf4j-impl-2.6.2.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/home/hadoop/apps/hadoop-2.7.6/share/hadoop/common/lib/slf4j-log4j12-1.7.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+
+Logging initialized using configuration in jar:file:/home/hadoop/apps/apache-hive-2.3.4-bin/lib/hive-common-2.3.4.jar!/hive-log4j2.properties Async: true
+Hive-on-MR is deprecated in Hive 2 and may not be available in the future versions. Consider using a different execution engine (i.e. spark, tez) or using Hive 1.X releases.
+hive> 
+
+具体使用：
+见"hive初体验.txt"这个文档！！！！！
+
+
+
+这个目录，是默认的hive数据仓库路径：
+/user/hive/warehouse/
+
+
+创建库
+切换库
+创建表
+导入数据
+查询分析
+
+
+insert into student(id,name,sex,age,department) values (11, "biaobiao", "男", 18, "beijing"); 
+
+
+
+总结：
+1、为什么有hive
+2、hive的概念
+3、hive的基础理论 hive的数据存储
+4、hive的环境搭建
+5、hive的基本使用
+
+
+今天在使用的过程中的告诫：
+1、如果看起来是数值，就使用int
+2、如果不是，就使用string
+
+
+MySQL支持标准的SQL语法
+Hive是来自于标准SQL语法的一个方言！  跟标准的SQL很像，但是某些语法上有区别！
+
+
+内部表
+外部表
+分区表
+分桶表
+
+
+创建表的语法的时候，详解！
+
+
+马老师
+骉骉biaobiao老师

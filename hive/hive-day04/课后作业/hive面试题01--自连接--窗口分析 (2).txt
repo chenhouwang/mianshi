@@ -1,0 +1,192 @@
+第一题：
+
+现有这么一批数据，现要求出：
+每个用户截止到每月为止的最大单月访问次数和累计到该月的总访问次数
+
+三个字段的意思：
+用户名，月份，访问次数
+
+A,2015-01,5
+A,2015-01,15
+B,2015-01,5
+A,2015-01,8
+B,2015-01,25
+A,2015-01,5
+A,2015-02,4
+A,2015-02,6
+B,2015-02,10
+B,2015-02,5
+A,2015-03,16
+A,2015-03,22
+B,2015-03,23
+B,2015-03,10
+B,2015-03,11
+
+最后结果展示:
+
+用户	月份		当月访问次数	最大访问次数	总访问次数		
+A       2015-01		33		33		33
+A       2015-02		10		33		43
+A       2015-03		38		38		81
+B       2015-01		30		30		30
+B       2015-02		15		30		45
+B       2015-03		44		44		89
+
+
+
+
+建表准备：
+create database if not exists exercise;
+use exercise;
+drop table if exists exercise01;
+create table exercise01(name string, month string, pv int) row format delimited fields terminated by ",";
+load data local inpath "/home/hadoop/exercise01.txt" into table exercise01;
+select * from exercise01;
+desc exercise01;
+
+开启本地执行和笛卡尔积：
+set hive.exec.mode.local.auto=true;
+
+
+首先得先做一个汇总：
+select a.name, a.month, sum(a.pv) as pv from exercise01 a group by a.name, a.month;
+
+
+
+1、为了得到最终的结果数据：
+
+用户	月份		当月访问次数	最大访问次数	总访问次数		
+A       2015-01		33		33		33
+A       2015-02		10		33		43
+A       2015-03		38		38		81
+B       2015-01		30		30		30
+B       2015-02		15		30		45
+B       2015-03		44		44		89
+
+2、如果能得到这样的数据：
+
+select a.name as aname, a.month as amonth, a.pv as apv, 
+b.name as bname, b.month as bmonth, b.pv as bpv 
+from 
+(select a.name, a.month, sum(a.pv) as pv from exercise01 a group by a.name, a.month) a 
+join 
+(select a.name, a.month, sum(a.pv) as pv from exercise01 a group by a.name, a.month) b 
+on a.name = b.name  
+where a.month >= b.month;
+
+A       2015-01 33      A       2015-01 33
+A       2015-02 10      A       2015-01 33
+A       2015-02 10      A       2015-02 10
+A       2015-03 38      A       2015-01 33
+A       2015-03 38      A       2015-02 10
+A       2015-03 38      A       2015-03 38
+B       2015-01 30      B       2015-01 30
+B       2015-02 15      B       2015-01 30
+B       2015-02 15      B       2015-02 15
+B       2015-03 44      B       2015-01 30
+B       2015-03 44      B       2015-02 15
+B       2015-03 44      B       2015-03 44
+
+
+3、那么执行这个SQL就行：
+select a.aname, a.amonth, a.apv,  max(a.bpv) as maxpv, sum(a.bpv) as sumpv 
+from 
+(
+select a.name as aname, a.month as amonth, a.pv as apv, 
+b.name as bname, b.month as bmonth, b.pv as bpv 
+from 
+(select a.name, a.month, sum(a.pv) as pv from exercise01 a group by a.name, a.month) a 
+join 
+(select a.name, a.month, sum(a.pv) as pv from exercise01 a group by a.name, a.month) b 
+on a.name = b.name  
+where a.month >= b.month
+) a 
+group by a.aname, a.amonth, a.apv;
+
+就能得到最终结果
+A       2015-01 33      33      33
+A       2015-02 10      33      43
+A       2015-03 38      38      81
+B       2015-01 30      30      30
+B       2015-02 15      30      45
+B       2015-03 44      44      89
+
+
+
+
+
+
+最终的SQL：
+select a.name as aname, a.month as amonth, a.pv as apv, 
+max(b.pv) as maxpv, sum(b.pv) as sumpv 
+from 
+(select a.name, a.month, sum(a.pv) as pv  from exercise01 a  group by a.name, a.month) a 
+join 
+(select a.name, a.month, sum(a.pv) as pv  from exercise01 a  group by a.name, a.month) b 
+on a.name = b.name 
+where a.month >= b.month 
+group by a.name, a.month, a.pv;
+
+
+
+
+
+第二题：
+
+现有如下格式的一份数据：
+
+店铺，月份，金额
+a,01,150
+a,01,200
+b,01,1000
+b,01,800
+c,01,250
+c,01,220
+b,01,6000
+a,02,2000
+a,02,3000
+b,02,1000
+b,02,1500
+c,02,350
+c,02,280
+a,03,350
+a,03,250
+
+需求：编写Hive的HQL语句求出每个店铺的当月销售额和累计到当月的总销售额
+
+
+
+
+结果SQL ：
+
+
+1、第一步：准备数据
+create database if not exists exercise;
+use exercise;
+drop table if exists sale;
+create table if not exists sale(name string, month string, amount int) row format delimited fields terminated by ",";
+truncate table sale;
+load data local inpath "/home/hadoop/sale.txt" into table sale;
+select * from exercise.sale;
+
+
+2、第二部分：一口气完成求出最终结果的SQL
+SELECT tl.NAME  ,tl.month  ,max(tl.amount) AS month_amount  ,sum(tr.amount) AS accumulate 
+FROM 
+(SELECT NAME ,month ,sum(amount) AS amount FROM sale GROUP BY NAME,month ) tl 
+JOIN 
+(SELECT NAME ,month ,sum(amount) AS amount FROM sale GROUP BY NAME,month ) tr 
+ON tl.NAME = tr.NAME 
+WHERE tl.month >= tr.month 
+GROUP BY tl.NAME ,tl.month 
+ORDER BY tl.NAME ,tl.month;
+
+
+最终结果：
+a       01      350     350
+a       02      5000    5350
+a       03      600     5950
+b       01      7800    7800
+b       02      2500    10300
+c       01      470     470
+c       02      630     1100

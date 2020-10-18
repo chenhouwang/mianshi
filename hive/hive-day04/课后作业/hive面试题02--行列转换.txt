@@ -1,0 +1,55 @@
+// 建表语句：
+CREATE TABLE `course` (
+  `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `sid` int(11) DEFAULT NULL,
+  `course` varchar(255) DEFAULT NULL,
+  `score` int(11) DEFAULT NULL 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+// 插入数据
+// 字段解释：id, 学号， 课程， 成绩
+INSERT INTO `course` VALUES (1, 1, 'yuwen',  43);
+INSERT INTO `course` VALUES (2, 1, 'shuxue', 55);
+INSERT INTO `course` VALUES (3, 2, 'yuwen',  77);
+INSERT INTO `course` VALUES (4, 2, 'shuxue', 88);
+INSERT INTO `course` VALUES (5, 3, 'yuwen',  98);
+INSERT INTO `course` VALUES (6, 3, 'shuxue', 65);
+INSERT INTO `course` VALUES (7, 3, 'yingyu', 80);
+
+求：所有数学课程成绩 大于 语文课程成绩的学生的学号
+
+
+
+
+
+
+
+行列转换的SQL:
+select sid, 
+max(case course when "yuwen" then score else 0 end) as yuwen,
+max(case course when "shuxue" then score else 0 end) as shuxue,
+max(case course when "yingyu" then score else 0 end) as yingyu 
+from course group by sid;
+
+
+结果：
+sid	yuwen	shuxue	yingyu
+1	43	55	0
+2	77	88	0
+3	98	65	80
+
+
+
+
+结果SQL：
+select aa.sid from (
+select sid, 
+max(case course when "yuwen" then score else 0 end) as yuwen,
+max(case course when "shuxue" then score else 0 end) as shuxue,
+max(case course when "yingyu" then score else 0 end) as yingyu 
+from course group by sid
+) aa where aa.shuxue > aa.yuwen;
+
+结果：
+1
+2

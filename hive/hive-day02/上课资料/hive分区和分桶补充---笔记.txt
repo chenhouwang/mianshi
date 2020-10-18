@@ -1,0 +1,152 @@
+create database if not exists myhive1;
+use myhive1;
+drop table if exists student;
+create table student(id int, name string, sex string ,age int, department string) row format delimited fields terminated by ",";
+load data local inpath "/home/hadoop/student.txt" into table student;
+select * from student;
+
+一、分区
+	hive表就是hdfs的上的一个目录
+	hive表中的数据，其实就是对应了HDFS上的一个目录下的数据
+	概念：对hive表的数据做分区管理
+
+	创建分区表
+	create table student_ptn(id int, name string) partitioned by (age int, department string) row format delimited fields terminated by ",";
+	
+	添加分区
+	// 添加一个分区
+	alter table student_ptn add partition(age=44,department="AA");
+	// 一次添加多个分区
+	alter table student_ptn add partition(age=66,department="CC") partition(age=55,department="BB");
+	// 添加成功。但是分区字段的顺序是在创建分区表的时候决定的
+	alter table student_ptn add partition(department="DD",age=77); 
+	// 添加分区时，指定分区的数据存储目录
+	alter table student_ptn add partition(age=88,department="EE") location "/ptn_input1" partition(age=99,department="FF") location "/ptn_input2";
+
+	查询分区
+	show partitions student_ptn;
+
+	修改分区
+	alter table student_ptn partition(age=44,department="AA") set location "hdfs://hadoop02:9000/ptn_input3";
+
+	// 往某个特定的分区导入数据
+	load data local inpath "/home/hadoop/student.txt" into table student_ptn partition(age=55,department="BB");
+
+	load data local inpath "/home/hadoop/student.txt" into table student_ptn;  XXXXX  不能直接往分区表导入数据
+
+	// 删除分区
+	alter table student_ptn drop partition(age=44,department="AA");  
+	// 删除分区的时候，包括分区的元数据信息和分区的数据及目录
+	// 清空分区表的时候，分区还在，数据被清空
+
+	导入数据，大体上说，总共有三种方式：
+	1、hadoop fs 
+	2、load 
+	3、insert ....select....
+
+	// 使用insert....values... 的方法是导入数据，主要用于测试
+	insert into table student_ptn values (101,"liutao");
+	insert into table student_ptn partition(age=66,department="CC") values (101,"liutao");
+
+	// 使用单重或者多重模式进去插入
+	from student
+	insert ... select ....
+	insert ... select ....
+
+	from student 
+	insert into table student_ptn partition(age=18,department="A") select id,name where age = 18 
+	insert into table student_ptn partition(age=18,department="B") select id,name where age = 19;
+
+	// 验证多重分区的插入是否成功
+	select id, name from student_ptn where age = 18 and department  = "A";
+	select id, name from student_ptn where age = 18 and department  = "B";
+
+	// 动态分区
+	set hive.exec.dynamic.partition = true;
+	set hive.exec.dynamic.partition.mode = nonstrict;
+
+	drop table student_ptn;
+
+	insert into table student_ptn partition(age=101, department) select id, department, name from student;     XXXXXX
+	insert into table student_ptn partition(age=202, department) select id, name, department from student;    √√√√√√√ 
+
+	insert into table student_ptn(age) select id, name, age from student;
+
+	动态分区的效果：
+
+	按照动态分区的字段的值做划分，一个值就是一个分区
+	该studnet表当中的分区字段department有多少个值，就有多少个分区
+
+	每个分区就存一个分区字段值的所有数据
+
+	department = IS  CS   MA
+
+二、分桶
+	
+	概念：对分区的进一步的 更细粒度的划分。 分区类似
+
+	分桶的核心思想跟 MR程序的默认分区组件HashParititioner的原理一致
+	原理：根据key的hash值去模除以reduceTask的个数/mapreduce的分区个数/hive表的分桶个数
+
+	分桶的原理：对分桶字段的值进行hash，然后模除以桶的个数，得到一个余数，该余数就是分桶的编号000000_0
+
+	MR	分区	mapper的outKey	reduceTask的个数
+	hive	分桶	分桶字段的值	分桶的个数
+
+	分桶的效果：
+	分桶字段的值经过分桶逻辑计算之后得到的余数相同的都在同一个分桶文件中
+
+	一个分桶文件可能存在分桶字段的多个值
+	一个分桶文件也可能存在没有任何数据
+
+	AA BB CC DD EE
+	分桶的个数：3
+	AA=0
+	BB=1
+	CC=0
+	DD=1
+	EE=0
+	上面的AA和CC和EE都会出现在第一个分桶文件当中
+	上面的BB和DD都会出现在第二个分桶文件中
+	第三个分桶文件当中就不会出现任何值。
+
+	表现形式上：
+	如果没有分区，那么分桶的目录就是表目录的下一级
+	如果有分区，那么分桶的目录在分区目录的下一级
+
+	分桶的操作：
+
+	创建分桶表：
+	create table student_bucket (id int, name string, sex string, age int, department string) clustered by (age) sorted by(age desc, id asc) into 2 buckets row format delimited fields terminated by ",";
+
+	往分桶表导入数据：
+	load data local inpath "/home/hadoop/student.txt" into table student_bucket;
+	注意：往分桶表导入数据，不能使用load方式   XXXXXXXXXXXX
+
+	insert .... values ....
+	insert into table student_bucket values (101,"liuyifei","female",22,"NVSHEN");
+	insert into table student_bucket values (102,"luoyufeng","female",33,"nvdiaosi");
+	// insert ....values...     XXXXXXXXXXXX
+
+	// insert into .... select.....
+	// XXXXXXXXXXXX
+	insert into table student_bucket select id,name,sex,age,department from student;
+	
+
+	√√√√√√√√√√√√√√√√√√√√√√√√
+	//  使用注意：打开分桶的开关，设置对应的reduceTask的个数要跟桶数匹配
+	set hive.enforce.bucketing = true;
+	set mapred.reduce.tasks = 2; / set mapreduce.job.reduces = 2;
+	insert into table student_bucket select id,name,sex,age,department from student distribute by age sort by age desc, id asc;
+	√√√√√√√√√√√√√√√√√√√√√√√√
+
+	
+	分桶的特例：
+	create table student_bucket1 (id int, name string, sex string, age int, department string) clustered by (age) sorted by(age desc) into 2 buckets row format delimited fields terminated by ",";
+
+	insert into table student_bucket1 select id,name,sex,age,department from student distribute by age;    XXXXXXXXXXXXX
+
+	验证的问题：最后分桶的数据到底有没有排序、
+
+	注意：创建分桶时指定的分桶和排序等等的信息都不能在数据插入的时候起作用
+	           数据到底有没有分桶是根据插入数据的HQL语句决定

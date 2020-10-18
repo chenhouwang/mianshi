@@ -1,0 +1,41 @@
+// 数据是students.txt      非常标准的二维结构    22行5列
+
+抽象成表名： student
+字段名： id int, name string, sex string, age int, department string
+
+实际操作：
+
+// 创建库
+create database myhive;
+
+// 使用新创建的库
+use myhive;
+
+// 查看当前正在使用的库：
+select current_database();
+
+// 创建表：要指定分隔符，但是分隔符不能是字符串，只能是字符（单个字母，标点符号）
+create table if not exists student(id int, name string, sex string, age int, department string) row format delimited fields terminated by ",";
+有两种常见的数据格式：CSV（,）   TSV（\t）
+
+
+// 往表中加载数据：
+load data local inpath "/home/hadoop/students.txt" into table student;
+
+// 查询数据
+select id,name,sex,age, department from student;
+
+// 查看表结构
+desc student;
+desc extended student;
+desc formatted student;
+
+// 统计每个部门多少人
+select department, count(*) as total from student group by department;
+
+// 查询最大的三个年龄
+select id, name, age from student order by age desc limit 3;
+
+// 查询MA部门中，年龄最大的三个人
+select id, name, age from student where department = "MA" order by age desc limit 3;
+

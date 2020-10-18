@@ -1,0 +1,418 @@
+删除数据：hadoop fs -rm -r /weblog/
+删除表：drop database weblog cascade;
+
+hive：
+	五次课
+	1、前四次：hive的相关使用，hive技术的讲解
+	2、最后一次：hive的具体生产环境的使用
+
+第一部分：hive课程内容回顾：
+
+	第一次课：hive的基础理论
+		为什么有hive
+			mapreduce慢，复杂（Hive：简化分布式海量数据计算应用程序开发）
+		hive的产生背景
+			facebook依托于mapreduce进行研发的一个分布式计算的SQL客户端
+		hive的基本概念和数据仓库
+			数据仓库相关
+		msyql数据库和hive数据仓库的区别
+			mysql侧重于：增删改的事务操作，也支持查询，读写都支持很完善
+			hive侧重于：查询分析
+		hive的组织架构
+			用户接口
+			thriftserver
+			四大组件
+			元数据库
+		hive的数据存储
+			逻辑结构：库，表，视图，分区
+			物理结构；分桶，数据文件
+		hive的环境安装
+			依赖环境
+			版本选择
+			具体安装
+		hive的基础使用
+			创建表 create table ....
+			导入数 load data ....
+			查询分析 select ... from ...
+
+	第二次课:
+		创建表
+			分桶表
+			分区表
+			内部表
+			外部表
+		其他基本语法
+			创建库
+			修改
+			查询desc/显示show
+			....
+	
+	第三次课:
+		插入数据：
+		1、load方式导入数据
+			本地：复制
+			HDFS：移动
+		2、insert方式
+			单条记录
+			单重插入
+			多重插入：为了提高效率的。
+		3、CTAS
+			create table ... as select ....
+		4、分区插入
+			静态分区插入
+			动态分区插入
+		5、分桶插入
+			1、isnert ... select ..
+			2、分桶查询（select分支就是分桶查询）
+
+		select查询：
+		1、select * from db.table1
+		2、select count(distinct uid) from db.table1
+		3、支持 select、union all、join（left、right、full join）、like、where、having、各种聚合函数、普通select, 合并, 连接, 支持 json 解析
+		4、UDF（User Defined Function）/ UDAF/UDTF
+			支持自定义函数：自定义函数式是使用java和python去定义。！ 
+			函数中的两种：
+			1、内置函数 271个！
+			2、自定义函数
+		5、不支持 update 和 delete
+		6、hive 虽然支持 in/exists（老版本是不支持的），但是 hive 推荐使用 semi join 的方式来代替实现，而且效率更高。
+			select * from student where id in (95010, 95011)   hive-0.8x 以前不支持
+			现在支持了，但是不推荐使用， 因为有更高效的操作
+			semi join
+		7、支持 case … when …
+		8、重点关注
+			order by
+			sort by
+			cluster by 
+			distribute by 
+
+
+	第四次课：
+
+		1、数据类型
+			数值类型
+				int double
+			string字符串类型
+			datetime日期时间类型
+			复杂类型
+				array  数组
+				map    映射
+				struct 结构
+
+		2、函数
+			内置函数
+			自定义函数
+				java方式
+				python脚本方式
+
+			UDF：单行函数		1-1
+			UDAF：聚合函数		n-1
+			UDTF：表格生成函数	1-n
+
+			计算：把输入按照某种逻辑编程某种输出
+
+			函数的分类：
+			1、关系运行
+			2、数学运算
+			3、逻辑运算
+			4、控制符运算
+			5、日期时间
+			6、字符串的
+			7、特殊函数：
+				concat 
+				split
+				if
+				nvl
+				coalesce
+				explode
+
+			终极心法：
+			1、show functions;
+			2、desc function extended concat;
+			3、百度/谷歌
+
+			最好都混脸熟
+
+		3、特殊分隔符
+			定义函数，能够帮助我们去实现一个相对简单查询更复杂的一些逻辑
+			知识：默认情况下，serde不支持 多字节分隔符的解析
+			
+			两种方案：
+				指定serde
+					通过正则的方式来搞定！
+				修改源码
+
+大总结：
+	
+	告诉大家
+	1、hive是什么
+	2、hive能做什么
+	3、hive的具体使用方式
+	4、hive在企业生产环境中的使用
+		hive的技术
+		企业级的需求
+
+
+第二部分：构建Hive数据仓库 进行 用户行为分析
+	
+
+	分析需求？
+		假如我是刘强东：我们京东做的好不好？
+			差的答案：还可以，非常好
+			好的回答：
+				从不同的角度，用各种数据结果来表明
+				1、用户总量：
+					阿里：3E
+					京东：2E
+				2、增长：
+					阿里：12%
+					京东：30%
+				3、用户粘度
+					阿里：3分钟
+					京东: 4分钟
+		怎么衡量一个网站做的好不好？
+		怎么衡量京东和阿里谁大谁小？
+
+			使用各种数据标签来进行对比分析!
+
+	做网站的数据分析：网站分析实战——如何以数据驱动决策，提升网站价值.pdf
+
+
+	电商的发展：
+	1、启蒙阶段
+		开发一个电商产品就可以直接给用户提供服务
+			用户在电商平台中下单
+			直接开发一个web项目， + 数据库 + linux 服务器
+		
+	2、工业化时代
+		用户保障：
+			技术进行扩展 
+			高可用的，高并发，架构
+			数据越来越大：报表分析：Hive针对海量的二维结构的数据进行分析
+		
+	3、信息/数据时代	
+		日志数据
+			状态数据， 行为数据，。。。。
+
+
+	数据开发工作 / 数据计算
+		开发
+		分析
+		挖掘
+
+	手段：数据分析
+		分析什么？
+		数据从哪里来？
+
+	一个网站如何做数据分析呢？
+		怎么做分析？
+		做什么分析？
+
+	数据分析的流程
+		见文档："数据分析.txt"
+
+	数据分析的概念：
+		
+
+	1、提出需求，明确思路
+		明确分析什么？
+		需求：衡量一个网站的好坏！
+	2、收集数据
+		数据从哪里来得到数据才能进行分析
+		一些业务数据，肯定是存储在业务数据库中，直接拉取出来进行统计
+			user
+			select count(*) as total from user;
+		我想知道所有用户在京东平台中的使用时间为多长？
+			业务数据库不足以分析这个需求：数据收集
+			到底怎么收集用户使用京东这个产品的时间呢？
+		演示？
+			从百度搜索引擎中搜索一个关键词
+		
+		埋点：通过在网页中，编写JS代码，收集点击数据，发送到服务器
+		形成日志文件
+
+	3、预处理数据
+		收集得来的数据基本都不是你做分析想要的格式：预处理
+			从不想要的数据格式，进行各种转换，得到我们想要的数据的格式
+			ETL:
+				抽取，转换，加载
+	4、数据分析，验证假设
+		excel
+		mysql
+		hive
+			写SQL
+		python
+	5、报表分析，可视化图表呈现，汇报
+		
+	
+	构建hive的数据仓库！
+
+	关于数据仓库的基础理论："数据仓库--基础理论.pdf"
+	
+	典型需求案例
+	1、面试题1
+	2、影评案例中的第8题
+
+
+
+需求：
+
+1、统计PV：统计总访问量
+	一次点击就是一个PV
+
+	假说现在想按照地域（省份）维度来走统计
+	统计每个省份的PV量的大量
+	  group by province;
+
+2、统计UV: 统计唯一访问用户总量
+	一个独立访客
+	标准：一次独立的访问，一次独立的访问，就是一次会话
+	一次会话：就是不关掉浏览器的连续多次访问
+
+	你怎么知道关掉还是不关掉浏览器呢?
+	sessionid1,url1,datetime1
+	sessionid1,url2,datetime2
+	sessiionid2,ur1,datetime3
+	...
+
+在做网站统计的时候，不同的行业的会有不同的指标：
+1、电商行业：订单总数，商品总数，金额，...
+2、环境卫生：PM2.5,  温度，湿度，酸碱度，...
+
+
+标准的下单的流程：
+1、首页
+2、商品列表页
+3、商品详情页
+4、购物车业务
+5、下单业务
+6、支付业务
+7、支付成功业务
+
+
+注册：
+1、打开首页
+2、打开注册页
+3、注册成功/注册验证
+
+
+
+
+111.192.165.229		IP
+- - 
+[19/Sep/2013:05:58:50 +0000]   访问时间
+"GET /wp-admin/images/resize.gif HTTP/1.1"	http相关信息
+304		访问状态码
+0		body数据大小
+"http://blog.fens.me/wp-admin/post-new.php"	url
+
+user-agent  每个http的请求，都有一个user_agent的属性
+"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.95 Safari/537.36"
+浏览器的类型，版本号，显示的分辨率，.....
+
+
+会话ID
+怎么判断，一个用户访问的时候，是不是使用了一个会话呢？
+默认情况中，浏览器有一个标准：一般来说，你打开某个浏览器访问了多次之后，没有关掉浏览器
+30分钟之后，会话自动失效
+
+你怎么判断哪些请求是同一个用户的呢？
+	1、如果有用户id
+	2、如果没有用户id
+		ip来算
+
+	标准：
+	按照ip来进行分组
+	每一组就是一个IP的都次访问
+	每次访问都有一个时间
+	按照时间排序
+	会形成一个点击流
+	任何两次访问之间的时间差距超过30分钟，就证明是两个不同的会话了
+
+
+ip1,url1,dt1
+ip1,url2,dt2
+ip1,url5,dt3
+ip1,url3,dt4
+
+
+ip1,url4,dt5
+ip1,url7,dt6
+ip1,url6,dt7
+
+
+会话总数：  独立访问   UV 
+
+
+sid1,ip1,url1,dt1,1
+sid1,ip1,url2,dt2,2
+sid1,ip1,url5,dt3,3
+sid1,ip1,url3,dt4,4
+
+
+sid,dt1,dt4,4,ip1
+
+select count(*) from uv;
+
+
+写SQL语句比较复杂一些。  而是使用其他的方式；编写mapreduce程序来解决
+
+
+36c76213-1b67-47d4-9365-4f263d6d8d72
+72.46.128.140
+-
+2013-09-18 07:58:50
+/hadoop-zookeeper-intro/
+1
+60
+"https://www.google.com/"
+"Mozilla/5.0(WindowsNT6.1;WOW64)AppleWebKit/537.1(KHTML,likeGecko)Chrome/21.0.1174.0Safari/537.1"14722200
+
+
+
+
+f9f27d30-1367-4c6b-95bd-0d49879b39e9
+71.206.247.97
+2013-09-19 03:39:57
+2013-09-19 03:39:57
+/hadoop-mahout-roadmap/
+/hadoop-mahout-roadmap/"
+http://f.dataguru.cn/thread-175501-1-1.html"
+1
+
+
+\001 单字节 acsii表
+ctrl + a
+
+create external table uv(sid string, ip string, intime string, outtime string, inpage string, outpage string, referpage string, pagevisits int) row format delimited fields terminated by "\001" location "/weblog/visitout/";
+
+
+ODS：access.lg 
+DW：uv
+DM：结果数据
+
+
+数据的可视化！
+
+学习python的时候：
+
+重点会将 pyhton怎么做数据预处理！！！
+
+
+hive做数据分析的标准流程：
+1、明确需求 
+2、收集数据
+3、数据预处理
+	mapreduce做的
+4、分析
+	sql
+	uv,pv 都是 select coutn(*) ...
+5、可视化呈现
+
+举个例子：
+原始的时间日期的格式：[19/Sep/2013:05:58:47 +0000]
+处理好之后：2013-09-18 06:51:45
+
+
+靠技术入门
+靠业务立足

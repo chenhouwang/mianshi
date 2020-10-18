@@ -1,0 +1,42 @@
+// 准备基础表
+create table rate_json(line string);
+load data local inpath '/home/hadoop/rating.json' into table rate_json;
+select * from rate_json limit 10;
+
+
+// 准备一张表用来存储，从json数据格式转换出来的包含四个字段的数据
+create table rate(movie int, rate int, unixtime int, userid int) row format delimited fields terminated by '\t';
+
+
+
+// 解析出数据插入到这张rate表中：
+insert into table rate select
+get_json_object(line,'$.movie') as moive,
+get_json_object(line,'$.rate') as rate,
+get_json_object(line,'$.timeStamp') as unixtime,
+get_json_object(line,'$.uid') as userid
+from rate_json;
+select * from rate limit 10;
+
+
+
+新的需求：使用另外的其他方式来解析hive中的数据： 编写脚本的方式
+
+
+// 编写一个脚本：weekday_mapper.py
+#!/bin/python
+import sys
+import datetime
+for line in sys.stdin:
+  line = line.strip()
+  movie,rate,unixtime,userid = line.split('\t')
+  weekday = datetime.datetime.fromtimestamp(float(unixtime)).isoweekday()
+  print '\t'.join([movie, rate, str(weekday),userid])
+
+
+// 创建一张新表，用来存储从ts字段解析出来的星期编号的字段数据的数据
+use hive3;
+create table if not exists lastjsontable(movie int, rate int, weekday int, userid int) row format delimited fields terminated by '\t';
+add file /home/hadoop/weekday_mapper.py;
+insert into table lastjsontable select transform(movie,rate,unixtime,userid) using 'python weekday_mapper.py' as(movie,rate,weekday,userid) from rate;
+select distinct(weekday) from lastjsontable;

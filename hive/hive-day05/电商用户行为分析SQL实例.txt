@@ -1,0 +1,10 @@
+建表导入数据：
+create database if not exists weblog;
+use weblog;
+drop table if exists pageviews;
+create external table pageviews(sid string, ip string, logdt string, visittime string, url string, step int, duration int, user_agent string, databytes int, res_code int) row format delimited fields terminated by "\x001" location "/weblog/pageviews/";
+desc pageviews;
+select * from pageviews;
+
+
+

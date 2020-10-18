@@ -1,0 +1,291 @@
+Hive数据仓库 第四次课：Hive高阶编程技巧和案例分析
+
+第一部分：上次课内容回顾
+
+	第二次课：
+		内容预告：
+		1、创建表
+			内部表
+			外部表
+			分区表
+			分桶表
+		2、导入数据
+			五种方式
+		3、写查询SQL
+
+	DML数据操纵
+
+		导入数据
+			五种方式
+			1、load方法：针对离线的文件数据（HDFS，linux，客户端）
+				本地数据
+				HDFS数据
+			2、insert方式
+				单条记录
+					insert into table student (....) values (....)
+				单重插入
+					insert ... select ...
+				多重插入
+					from student 
+					insert ... select ....
+					insert ... select ....
+					....
+			3、CTAS
+				Create Table ...  As  Select .....
+				select的查询结果可以看做是一张虚标，就算是一行一列的一个单一的值，也可以看做是一张二维表格
+				把这张虚表中的数据，创建一张真实的hive的表来进行物化
+			4、分区插入
+				静态分区
+					手动定义分区
+						alter table student_ptn add partition()
+					然后往分区中插入数据
+						load data local inpath "" into table student_ptn partition()
+				动态分区
+					打开动态分区的开关
+					编写动态分区插入的SQL即可
+					
+			5、分桶插入
+				打开一个开关
+				创建一张分桶表之后，只有通过分桶查询的语句结果才能插入
+				分桶的数据：insert....select .... distribute by / cluster by 
+
+		导出数据
+
+	DQL查询分析
+
+		支持常见的各种SQL语法：select,from,join...on,where,group by,having,order by,limit
+		支持case....when....
+		支持in/exists，但是有更高效的实现semi join
+		支持join查询，但是只等值链接，和and多条件过滤，不支持非等值连接，不支持or
+		特别关注：order by, sort by, cluster by, distribute by 
+			order by: 全局排序
+			sort by: 局部排序
+			cluster by： 既分桶，也排序
+			dsitribute by: 只分桶，不排序
+			如果要排序，搭配sort by来进行
+		join查询：
+			内连接
+			外连接
+			半连接，in/exists语法的另外一种高效实现
+
+
+第二部分：今天内容提要
+
+	数据类型
+
+	函数
+	
+	SQL面试题/练习、案例分析
+
+
+
+
+第一个知识：
+	数据类型
+	hive官网：http://hive.apache.org/
+
+	编程界：
+	数值类型：整数， 小数
+	          整型   浮点型
+		  精度的关系
+
+		  整型： 
+		 java
+			byte  short  int  long
+		 hive
+			tinyint  smallint, int, bigint
+		内存大小：
+			1        2        4        8
+	
+		浮点型：
+			float	精度小一些	4
+			double   精度更高一些	8
+
+	字符串
+		
+		mysql:
+			varchar  字符串：一串字符
+			char     字符
+			单词：字符串
+
+		ASCII表！
+			字母：字符
+
+		字符串！
+
+	复杂类型
+		json类型
+		array数组
+		map映射keyvalue类型
+		struct复杂结构类型
+	
+	日期时间
+		datetime  date  time 
+
+	复杂类型：
+	array:
+	create table test_array(name string, citys array<string>) row format delimited fields terminated by "\t" collection items terminated by ",";
+
+	map:
+	create table test_map(name string, scores map<string, int>) row format delimited fields terminated by "\t" collection items terminated by "," map keys terminated by ":"
+
+	struct
+	create table test_struct(id int, course_score struct<course:string, score:int>) row format delimited fields terminated by "\t" collection items terminated by ",";
+
+
+	80 + 90 = 170 
+	"80" + "90" = "8090"
+
+	scores map<string, scores array<int>>
+	union 
+
+	在企业级的建表中，最复杂也就只能使用 array,map,struct这三种类型，否则就最好使用
+	int,string,date,.... 为宜
+
+
+
+
+
+第二个知识点：	函数
+
+	什么叫做函数？定义一个独立执行的逻辑代码段
+			y =f(x)  f就是函数， x是f的输入，y是f的输出
+		
+	select sum(3, 4);
+
+	写sql的时候：
+	select lower(department) as dpt, count(*) as total from student group by department;
+
+	select year(now());
+
+	函数的分类：
+
+	1、函数的功能性质来分：
+		单行函数： 1对1 
+			给定一个值，返回一个值的函数  
+			length,instr,substr,....
+		聚合函数： n对1
+			给定一个字段的多个值，进行聚合操作：
+				count,sum,avg,max,min,distinct,....
+		表格生成函数: 1对n
+			给定一个值，最后生成多个值
+			典型的函数实现：explode() 炸裂
+	
+		特殊函数：
+			过程控制的：
+			if
+			nvl
+			coalesce
+			....
+
+	2、定义方式来分：
+		预定义函数：内置函数， hive定义好的，可以直接使用的函数
+		自定义函数     hive不提供，必须自己编写这个函数的实现，然后才能使用
+
+	hive到底给我们定义了多少个元素？
+	怎么查: show functions;
+
+	最蠢的方式：挨个儿学
+	背单词
+
+	我告诉你一个终极心法：
+	分为三步走：
+	1、show functions;  列举出来到底有那些函数，绝大部分函数，都是可以通过函数名得知它的用途
+	2、查询具体某个函数的帮助文档：
+		desc function extended 函数名
+	3、就算通过第二步查询，也有可能有一些函数你根本看不懂！
+		请百度！
+
+	
+	尖锐的问题：
+
+	现在有271个，由于我呢都没有使用过，所以不知道这271中的每一个都是用来干嘛的。
+	混脸熟！
+	把这271个函数，从头到尾，都看一遍！
+
+
+	explode(a)
+
+	separates 
+	
+	# 把一个数组，拆分成多行
+	the elements of array a into multiple rows, 
+	例子：select explode(split("a,b,c,d", ",")) as xx;
+
+	or 
+	
+	# 把一个map拆分成一个多行两列的子表
+	the elements of a map into multiple rows and columns 
+	例子：
+	select explode(str_to_map("a:10,b:20,c:30", ",", ":"));
+
+
+hive: java 
+	定义函数的话：最好的方式就是使用java。
+
+	JSON格式：javascript object 
+
+	{"movie":"1193","rate":"5","timeStamp":"978300760","uid":"1"}
+
+	表示一个对象：{}
+	表示一个数组：[]
+
+	[{"a":11, "name":"huangbo"},{},{}]
+	{}
+
+	ctrl + a  ====>  \x001  
+	ctrl + b =====>  \x002
+
+
+insert into table lastjsontable select transform(movie,rate,unixtime,userid)
+using 'python weekday_mapper.py' as(movie,rate,weekday,userid) from rate;
+
+
+	第一种：java
+	第二种：调用外部脚本。python脚本，也可以是linux的shell脚本
+
+
+数据类型
+
+函数讲完：
+	
+	内置函数
+	自定义函数
+
+假如现在有这么一个文件：
+
+	答案很简单：
+	hive默认的serde组件，不支持多字节的分隔符的解析！
+
+	通俗的说，默认的情况下，hive不支持使用一个字符串来当做列的分隔符
+	在默认情况下，使用单个字符来当做分隔符是OK 的。
+
+	换一个能支持多字节分隔符解析的serde组件！ 
+
+	serde到底是个什么鬼呢？
+	序列化， 反序列化
+	把数据从一台服务器  传输到另外一台服务器，数据肯定是以二进制序列的形式来进行传输的
+	对象格式，但是都要序列化成 二进制的序列形式。
+
+
+	RegexSerDe    支持正则解析的！
+
+	(.*)::(.*)
+
+create table doublebi2(id string,name string) 
+row format serde 'org.apache.hadoop.hive.serde2.RegexSerDe' 
+with serdeproperties('input.regex'='(.*)::(.*)','output.format.string'='%1$s %2$s') 
+stored as textfile;
+
+row format 的值有两个：
+	1、delimited
+	2、serde
+
+	用来解决你在企业工作环境中遇到的一些刁钻的数据格式，
+
+	1^_^huangbo^_^22
+
+
+案例分析！
+
+周五：企业级的hive数据仓库的项目。案例分析！

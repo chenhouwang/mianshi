@@ -1,0 +1,80 @@
+// 数据准备：cookie3.txt
+d1,user1,1000
+d1,user2,2000
+d1,user3,3000
+d2,user4,4000
+d2,user5,5000
+
+
+// 建表语句：
+create database if not exists myhive;
+use myhive;
+drop table if exists cookie3;
+create table cookie3(dept string, userid string, sal int) row format delimited fields terminated by ',';
+load data local inpath "/home/hadoop/cookie3.txt" into table cookie3;
+select * from cookie3;
+
+
+
+CUME_DIST
+–CUME_DIST 小于等于当前值的行数/分组内总行数
+
+
+–比如，统计小于等于当前薪水的人数，所占总人数的比例
+// SQL语句：
+SELECT  dept, userid, sal,
+CUME_DIST() OVER(ORDER BY sal) AS rn1,
+CUME_DIST() OVER(PARTITION BY dept ORDER BY sal) AS rn2 
+FROM cookie3;
+
+// 结果：
+d1      user1   1000    0.2     0.3333333333333333
+d1      user2   2000    0.4     0.6666666666666666
+d1      user3   3000    0.6     1.0
+d2      user4   4000    0.8     0.5
+d2      user5   5000    1.0     1.0
+
+
+// SQL语句：
+SELECT  dept, userid, sal,
+CUME_DIST() OVER(ORDER BY sal) AS rn1,
+CUME_DIST() OVER(PARTITION BY dept ORDER BY sal desc)  AS rn2 
+FROM cookie3;
+
+结果：
+d1      user3   3000    0.6     0.3333333333333333
+d1      user2   2000    0.4     0.6666666666666666
+d1      user1   1000    0.2     1.0
+d2      user5   5000    1.0     0.5
+d2      user4   4000    0.8     1.0
+
+
+
+PERCENT_RANK
+–PERCENT_RANK 分组内当前行的RANK值-1/分组内总行数-1
+
+// SQL语句：
+SELECT  dept, userid, sal,
+        PERCENT_RANK() OVER(ORDER BY sal) AS rn1,   --分组内
+        RANK() OVER(ORDER BY sal) AS rn11,                   --分组内RANK值
+       SUM(1) OVER(PARTITION BY NULL) AS rn12,     --分组内总行数
+      PERCENT_RANK() OVER(PARTITION BY dept ORDER BY sal) AS rn2 
+FROM cookie3;
+
+
+// 结果：
+d1      user1   1000    0.0     1       5       0.0
+d1      user2   2000    0.25    2       5       0.5
+d1      user3   3000    0.5     3       5       1.0
+d2      user4   4000    0.75    4       5       0.0
+d2      user5   5000    1.0     5       5       1.0
+
+
+
+// SQL语句：
+SELECT  dept, userid, sal,
+        PERCENT_RANK() OVER(PARTITION BY dept ORDER BY sal) AS rn1,   --分组内
+        RANK() OVER(ORDER BY sal) AS rn11,                   --分组内RANK值
+       SUM(1) OVER(PARTITION BY NULL) AS rn12,     --分组内总行数
+      PERCENT_RANK() OVER(PARTITION BY dept ORDER BY sal) AS rn2 
+FROM cookie3;

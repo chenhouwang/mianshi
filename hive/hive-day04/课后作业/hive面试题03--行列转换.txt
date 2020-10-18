@@ -1,0 +1,129 @@
+现有一份以下格式的数据：
+表示有id为1,2,3的学生选修了课程a,b,c,d,e,f中其中几门：
+
+id course 
+1,a
+1,b
+1,c
+1,e
+2,a
+2,c
+2,d
+2,f
+3,a
+3,b
+3,c
+3,e
+
+
+编写Hive的HQL语句来实现以下结果：
+表中的1表示选修，表中的0表示未选修
+
+id	a	b	c	d	e	f
+1	1	1	1	0	1	0
+2	1	0	1	1	0	1
+3	1	1	1	0	1	0
+
+
+
+
+
+
+
+
+解题思路：
+
+1、创建表  导入数据
+
+create database if not exists exercise;
+use exercise;
+drop table if exists exercise03;
+create table if not exists exercise03(id int, course string) row format delimited fields terminated by ",";
+truncate table exercise03;
+load data local inpath "/home/hadoop/exercise03.txt" into table exercise03;
+select * from exercise03;
+
+
+结果：
+1       a
+1       b
+1       c
+1       e
+2       a
+2       c
+2       d
+2       f
+3       a
+3       b
+3       c
+3       e
+
+
+2、先求出所有课程的集合
+
+第一步：
+select collect_set(course) as courses from exercise03;
+
+结果：
+
+["a","b","c","e","d","f"]
+
+
+
+第二步：
+set hive.strict.checks.cartesian.product=false;
+set hive.exec.mode.local.auto=true;
+
+
+create table course_tmp as 
+select t1.id as id,t1.course as course,t2.course courses 
+from 
+(select id as id,collect_set(course) as course from exercise03 group by id ) t1 
+join 
+(select collect_set(course) as course from exercise03) t2;
+
+
+结果：exercise03s表
+id	course			courses
+1       ["a","b","c","e"]       ["a","b","c","e","d","f"]
+2       ["a","c","d","f"]       ["a","b","c","e","d","f"]
+3       ["a","b","c","e"]       ["a","b","c","e","d","f"]
+
+
+3、得出最终结果：
+思路：
+拿出course字段中的每一个元素在exercise03s中进行判断，看是否存在。
+
+select id,
+case when array_contains(course, courses[0]) then 1 else 0 end as a,
+case when array_contains(course, courses[1]) then 1 else 0 end as b,
+case when array_contains(course, courses[2]) then 1 else 0 end as c,
+case when array_contains(course, courses[3]) then 1 else 0 end as d,
+case when array_contains(course, courses[4]) then 1 else 0 end as e,
+case when array_contains(course, courses[5]) then 1 else 0 end as f 
+from course_tmp;
+
+结果：
+1       1       1       1       1       0       0
+2       1       0       1       0       1       1
+3       1       1       1       1       0       0
+
+
+
+
+
+最终的完整的SQL：
+select abc.id,
+case when array_contains(abc.course, abc.courses[0]) then 1 else 0 end as a,
+case when array_contains(abc.course, abc.courses[1]) then 1 else 0 end as b,
+case when array_contains(abc.course, abc.courses[2]) then 1 else 0 end as c,
+case when array_contains(abc.course, abc.courses[3]) then 1 else 0 end as d,
+case when array_contains(abc.course, abc.courses[4]) then 1 else 0 end as e,
+case when array_contains(abc.course, abc.courses[5]) then 1 else 0 end as f 
+from (
+select t1.id as id,t1.course as course,t2.course courses 
+from 
+(select id as id,collect_set(course) as course from exercise03 group by id ) t1 
+join 
+(select collect_set(course) as course from exercise03) t2
+) abc;

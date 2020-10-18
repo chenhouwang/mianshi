@@ -1,0 +1,39 @@
+数据：bi.txt
+01||huangbo
+02||xuzheng
+03||wangbaoqiang
+
+create table double_dilimiter(id int, name string) row format delimited fields terminated by "||";
+load data local inpath "/home/hadoop/bi.txt" into table double_dilimiter;
+select * from double_dilimiter;
+
+没法解析：
+因为查询的结果数据只是：
+1
+2
+3
+并没有第二个字段的值
+
+
+
+新的方式/思路：
+默认的LazySimpleSerDe不支持多子节点分隔符的处理，所以更换可以处理多字节分隔符的SerDe即可
+
+
+
+第一种： 使用hive提供的regexserde;
+create table t_bi_reg(id string,name string)
+row format serde 'org.apache.hadoop.hive.serde2.RegexSerDe'
+with serdeproperties('input.regex'='(.*)\\|\\|(.*)','output.format.string'='%1$s %2$s')
+stored as textfile;
+
+load data local inpath '/home/hadoop/bi.txt' into table t_bi_reg;
+select * from t_bi_reg;
+
+
+
+
+第二种方式： 修改InputFormat源码
+
+BiDelimiterInputFormat.java
+BiRecordReader.java

@@ -1,0 +1,309 @@
+1、正确建表，导入数据
+思路：重点在于要把 ‘::’ 给替换掉，其他都是简单事
+create table users(UserID BigInt, Gender String, Age Int, Occupation String, Zipcode String)
+row format serde 'org.apache.hadoop.hive.serde2.RegexSerDe'
+with serdeproperties('input.regex'='(.*)::(.*)::(.*)::(.*)::(.*)','output.format.string'='%1$s %2$s %3$s %4$s %5$s')
+stored as textfile;
+load data local inpath '/home/hadoop/moviedata/users.dat' INTO TABLE users;
+select * from users limit 5;
+
+create table movies(MovieID BigInt, Title String, Genres String)
+row format serde 'org.apache.hadoop.hive.serde2.RegexSerDe'
+with serdeproperties('input.regex'='(.*)::(.*)::(.*)','output.format.string'='%1$s %2$s %3$s')
+stored as textfile;
+load data local inpath '/home/hadoop/moviedata/movies.dat' INTO TABLE movies;
+select * from movies limit 5;
+
+create table ratings(UserID BigInt, MovieID BigInt, Rating Double, Timestamped String)
+row format serde 'org.apache.hadoop.hive.serde2.RegexSerDe'
+with serdeproperties('input.regex'='(.*)::(.*)::(.*)::(.*)','output.format.string'='%1$s %2$s %3$s %4$s')
+stored as textfile;
+load data local inpath '/home/hadoop/moviedata/ratings.dat' INTO TABLE ratings;
+select * from ratings limit 5;
+
+第二种做法：使用sed进行文本处理：
+sed 's/::/%/g' users.dat >> newusers.dat
+sed 's/::/%/g' movies.dat >> newmovies.dat
+sed 's/::/%/g' ratings.dat >> newratings.dat
+
+create table users(UserID BigInt, Gender String, Age Int, Occupation String, Zipcode String)
+row format delimited fields terminated by '%' stored as textfile;
+
+create table movies(MovieID BigInt, Title String, Genres String) 
+row format delimited fields terminated by '%' stored as textfile;
+
+create table ratings(UserID BigInt, MovieID BigInt, Rating Double, Timestamped String) 
+row format delimited fields terminated by '%' stored as textfile;
+
+load data local inpath '/home/hadoop/moviedata/newusers.dat' into table users;
+load data local inpath '/home/hadoop/moviedata/newmovies.dat' into table movies;
+load data local inpath '/home/hadoop/moviedata/newratings.dat' into table ratings;
+
+select * from users limit 10;
+select * from movies limit 10;
+select * from ratings limit 10;
+
+这条语句用来做测试的：用来把三张表的数据连接成为一张表
+SELECT  users.UserID, users.Age, users.Gender, movies.Title, movies.Genres FROM ratings 
+JOIN users ON (ratings.UserID = users.UserID)  
+JOIN movies ON (ratings.MovieID = movies.MovieID) 
+WHERE ratings.MovieID = 2116 ;
+
+
+
+
+
+
+
+
+
+2、求被评分次数最多的10部电影，并给出评分次数（电影名，评分次数）
+思路：评分表ratings和电影表做链接查询，然后按照电影分组，计评分次数，按次数降序排，取前10条数据
+create table answer2 as select count(a.userid) users, b.title title from ratings a join movies b on a.movieid = b.movieid group by b.title order by users desc limit 10;
+
+3428    American Beauty (1999)
+2991    Star Wars: Episode IV - A New Hope (1977)
+2990    Star Wars: Episode V - The Empire Strikes Back (1980)
+2883    Star Wars: Episode VI - Return of the Jedi (1983)
+2672    Jurassic Park (1993)
+2653    Saving Private Ryan (1998)
+2649    Terminator 2: Judgment Day (1991)
+2590    Matrix, The (1999)
+2583    Back to the Future (1985)
+2578    Silence of the Lambs, The (1991)
+
+
+
+
+
+
+
+
+3、分别求男性，女性当中评价最高的10部电影（性别，电影名，评分）
+思路：评价最高，就是评分最高，然后再分男女，以评分表为主表，链接电影表movies查询电影名，链接用户名，确定用户性别
+create table answer3_f as select avg(b.rating) rate,c.gender gender, a.title title from movies a 
+join ratings b on a.movieid = b.movieid 
+join users c on b.userid = c.userid 
+where c.gender = 'F' group by title, gender order by rate desc limit 10; 
+
+create table answer3_m as select avg(b.rating) rate,c.gender gender, a.title title from movies a 
+join ratings b on a.movieid = b.movieid 
+join users c on b.userid = c.userid 
+where c.gender = 'M' group by title, gender order by rate desc limit 10;
+
+5.0     F       Battling Butler (1926)
+5.0     F       Bittersweet Motel (2000)
+5.0     F       Coldblooded (1995)
+5.0     F       Dancemaker (1998)
+5.0     F       Twice Upon a Yesterday (1998)
+5.0     F       Saltmen of Tibet, The (1997)
+5.0     F       One Little Indian (1973)
+5.0     F       Message to Love: The Isle of Wight Festival (1996)
+5.0     F       Country Life (1994)
+5.0     F       For the Moment (1994)
+
+
+
+
+
+
+
+4、求movieid = 2116这部电影各年龄段的平均影评（年龄段，评分）
+思路：首先我查了一下年龄，总共就1 18 25 35 45 50 56 这几个值，所以年龄段就按照这7个值划分好了。如果是所有年龄岁数都有的话，那么就要指定年龄段的范围了。
+create table answer4 as select distinct age from users;
+select a.age age, avg(b.rating) rate from users a join ratings b on a.userid = b.userid where b.movieid = '2116' group by a.age;
+
+1       3.2941176470588234
+18      3.3580246913580245
+25      3.436548223350254
+35      3.2278481012658227
+45      2.8275862068965516
+50      3.32
+56      3.5
+
+
+
+
+
+
+
+5、求最喜欢看电影的那位女性评分最高的10部电影的平均影评分（人，电影名，影评）
+思路：最喜欢看电影的女性，就是评分次数最多的女性
+select e.userid userid, count(r.movieid) movieno from users e join ratings r on e.userid = r.userid group by e.userid order by movieno desc limit 1;
+4169
+
+select userid, count(movieid) as movieNum from ratings group by userid order by movieNum desc limit 1;
+4169    2314
+
+她评分最高的10部电影
+select distinct(aa.movieid) from (select c.movieid as movieid, c.rating rate from ratings c where c.userid = '4169' order by rate desc limit 10) aa;
+
+3362    5.0
+2352    5.0
+1284    5.0
+1283    5.0
+750     5.0
+1282    5.0
+1281    5.0
+1280    5.0
+2018    5.0
+3361    5.0
+
+或者创建视图
+create view top10_movie_view as select c.movieid as movieid, c.rating rate from ratings c where c.userid = '4169' order by rate desc limit 10;
+
+然后，她评分最高的10部电影的平均影评分
+select a.title title, avg(b.rating) rate from movies a join ratings b on a.movieid = b.movieid where b.movieid in (select distinct(aa.movieid) from (select c.movieid as movieid, c.rating rate from ratings c where c.userid = '4169' order by rate desc limit 10) aa) group by a.title order by rate desc;
+
+或者用视图做
+select avg(a.rating) rate, a.movieid mid from ratings a left semi join top10_movie_view b on a.movieid = b.movieid group by a.movieid order by rate desc;
+
+3.969934640522876       3362
+3.837442922374429       3361
+3.8747016706443915      2352
+3.738539898132428       2018
+4.312384473197782       1284
+4.1786600496277915      1283
+3.904559915164369       1282
+4.032407407407407       1281
+4.1732851985559565      1280
+4.4498902706656915      750
+
+所以完整的语句：
+select a.title title, avg(b.rating) rate from movies a join ratings b on a.movieid = b.movieid where b.movieid in (select distinct(aa.movieid) from (select c.movieid as movieid, c.rating rate from ratings c where c.userid = (select e.userid userid, count(r.movieid) movieno from users e join ratings r on e.userid = r.userid group by e.userid order by movieno desc limit 1) order by rate desc limit 10) aa) group by a.title order by rate desc;
+
+
+
+
+
+
+6、求好片（评分>=4.0）最多的那个年份的最好看的10部电影
+思路：可以利用substring截取出来年份字段
+desc function substring;
+desc function extended substring;
+截取到年份
+测试substring：select substring('Beauty and the Beast (1991)', length('Beauty and the Beast (1991)')-4, 4);
+
+create table movie_year as select movieid, substring(title, length(title)-4, 4) as year, title, genres from movies;
+求出每一年，每部电影的影评
+create table movie_year_avg as select a.title title, a.year movieyear, a.genres genres, avg(b.rating) rate from movie_year a  join ratings b on a.movieid = b.movieid group by a.title, a.year, a.genres;
+求出好电影最多的那一年
+select movieyear, count(*) goodmovie from movie_year_avg where rate >= 4 group by movieyear order by goodmovie desc limit 1;
+在求出该年份最好看，也就是评分最高的10部电影
+select title, movieyear, rate from movie_year_avg where movieyear = '1998' order by rate desc limit 10;
+
+
+
+
+
+
+
+7、求1997年上映的电影中，评分最高的10部Comedy类电影
+编写一个udf，多加一个字段，这个字段值表示，如果该电影是comedy类电影，就置为1，如果不是，就置为0
+add jar /home/hadoop/comedymovieudf.jar;
+create temporary function comedy as 'com.ghgj.hive.test.ComedyMovieUDF';
+create table comedy_movie as select movieyear, title, genres, rate, comedy(genres) as comedy from movie_year_avg;
+然后再统计一下就OK
+select * from comedy_movie where comedy = 1 and movieyear = '1997' order by rate desc limit 10;
+
+
+
+
+第8题，第9题准备工作：
+创建一张只有一个string类型的line字段表存储movie_line并导入数据：
+create table movie_line(line string) row format delimited fields terminated by '\t';
+load data local inpath '/home/hadoop/moviedata/movies.dat' into table movie_line;
+
+编写UDTF，拆分电影类型，把一行变成多行：
+add jar /home/hadoop/movieudtf.jar;
+create temporary function process_movie_type as 'com.ghgj.hive.demo.MovieTypeUDTF';
+create table movie_type as select adTable.movieid,  adTable.moviename,  adTable.movietype from movie_line lateral view process_movie_type(line) adTable as movieid, moviename, movietype; 
+
+其中：movie_type表中有三个字段：
+movieid, moviename, movietype 跟 udtf 代码中输出的三个字段一样
+
+
+
+或者使用自带的explode UDTF函数也是可以的
+drop table movie_type_copy;
+create table movie_type_copy as select aa.movieid mid, aa.title moviename, ss.movietype mtype from movies aa lateral view explode(split(genres, '\\|')) ss  as movietype;
+select * from movie_type_copy limit 20;
+
+
+
+
+
+
+
+
+8、该影评库中各种类型电影中评价最高的5部电影（类型，电影名， 平均影评分）
+
+先准备库和表：
+drop table movie_type_copy;
+create table movie_type_copy as select aa.movieid mid, aa.title moviename, ss.movietype mtype from movies aa lateral view explode(split(genres, '\\|')) ss  as movietype;
+select * from movie_type_copy limit 20;
+
+第一步：先把电影的评分和类型关联起来
+create table movie_rate_type as select a.movieid as movieid, a.rating as rate, b.moviename as moviename, b.movietype as movietype from ratings a join movie_type b on a.movieid = b.movieid;
+
+第二步：统计各类型电影中评价最高的5部电影
+
+1、先利用row_number()函数给每个类型的电影排个序
+create table movie_rate as select a.movieid as movieid, a.moviename as moviename, a.movietype as movietype, avg(a.rate) as rate from movie_rate_type a group by movietype, movieid, moviename;
+
+create table movie_rate_type_order as select t.*,row_number() over (distribute by movietype sort by rate desc) rn from movie_rate t order by t.movietype, t.rate desc;
+
+2、然后取每种类型电影的前5
+select * from movie_rate_type_order a where a.rn < 6 order by a.movietype, a.rate desc;
+
+
+
+
+
+
+
+
+9、各年评分最高的电影类型（年份，类型，影评分）
+第一步，先划分出年份：
+create table movie_rate_type_year as select movieid,moviename, substring(moviename, length(moviename)-4, 4) as year, movietype, rate from movie_rate_type;
+第二步：按，年份和电影类型分组，求电影的平均评分
+create table best_year_movie_type as select year, movietype, avg(a.rate) as rate from movie_rate_type_year a group by year, movietype order by year, rate;
+第三步：求上述第二步中评分最高的电影类型  
+select aa.* from (select t.*,row_number() over (distribute by year sort by rate desc) rn from best_year_movie_type t) aa where aa.rn = 1;
+
+
+
+
+
+
+
+
+
+10、每个地区最高评分的电影名，把结果存入hdfs（地区，电影名，电影评分）
+思路：按地区分组，评分降序，然后每组取前1
+1、先求出每个电影在每个地区的评分情况，存入中间表
+create table zipcodemovie as select a.zipcode zipcode,b.movieid movieid, b.title title, avg(c.rating) rate from ratings c join users a on c.userid = a.userid join movies b on c.movieid = b.movieid group by a.zipcode, b.title, b.movieid order by rate desc;
+
+2、再取这张中间表zipcodemovie中，每个地区评分最高的电影
+这个sql需要用到row_number这个内置函数，不然很难实现，意思是给每组都按照你的排序规则编号
+## 下面这句话是测试语句
+select t.*,row_number() over (distribute by zipcode sort by rate desc) rn from zipcodemovie t limit 50;
+## 给每个地区zipcode的电影按评分编号，然后插入到zipcode_best_movie_index
+create table zipcode_best_movie_index as select t.*,row_number() over(distribute by zipcode sort by rate desc) rn from zipcodemovie t;
+## 从zipcode_best_movie_index查询每组排第一的电影的数据插入到zipcode_best_movie
+create table zipcode_best_movie(zipcode string, movieid string, title string, rate double, rn int) row format delimited fields terminated by '\t' stored as textfile;
+insert into table zipcode_best_movie select * from zipcode_best_movie_index where  rn = 1;
+所以到现在为止，zipcode_best_movie里的数据就都是每个地区的评分最高的电影
+select * from zipcode_best_movie limit 50;
+
+
+
+
+
+
+
+
+
+
+
+补充一种做法：可以考虑把所有的数据都合并。这样就不会有链接查询了
