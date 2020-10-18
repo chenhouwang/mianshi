@@ -1,0 +1,84 @@
+1.函数 
+  1.1 单行函数: 返回结果一条记录
+     1)数学函数: 数学运算
+	 2)字符函数: 字符串操作
+	 3)日期函数: 日期操作
+  1.2 聚合函数 *
+     聚合运算: select不能出现字段名称  返回一个结果
+	select max(sal) from emp;
+	select min(sal) from emp;
+	select avg(sal) from emp;
+	select sum(sal) from emp;
+	# 求总记录数
+	select count(*) from emp;
+	select count(1) from emp;
+	# 求字段的个数(非空)
+	select count(comm) from emp;
+	
+  1.3 分组函数 *
+    将数据划分为更小的小组,然后进行计算
+	group by 字段:根据字段值的不同划分为多个小组,每个小组返回一条记录
+	   在select子句中能够出现聚合函数,只能出现分组字段
+	   
+	# 每个部门的平均工资
+    select deptno,avg(sal) from emp group by deptno;
+	
+	having: 和where作用一致,但是出现在group by之后,主要分组之后再次进行过滤
+	
+	1. where只能出现在group by之前
+	2. where中不能出现聚合函数
+	
+	select deptno,avg(sal) sal from emp group by deptno having sal > 2000;
+	
+  
+  1.4 加密函数
+    md5()
+	sha()
+	password()
+  
+  
+  1.5 流程函数 *
+    
+  
+2.多表连接查询
+  1.笛卡尔积: 两个集合的有序对的组合
+  2.内连接
+     1.与连接顺序无关(没有主从表)
+	 2.多张表都能匹配的数据才能出现在结果集中
+  
+     select * from emp,dept where emp.deptno = dept.deptno;  方言
+	 select * from emp inner join dept on emp.deptno = dept.deptno; 标准
+	     xx inner join xx on 关联条件
+		 
+	 1.前提: 关联字段名称必须一样,而且是等值连接
+	 优点: 自动去重字段
+	 select * from emp inner join dept using(deptno);	 
+  3.外连接
+    1.与连接顺序有关(主从表之分,驱动表/附属表)
+    2.以主表为基准,依次在从表中寻找关联的记录,如果匹配则关联并展示在结果集中,否则以null填充
+    left [outer] join ...on...
+    right [outer] join ...on...
+  4. 自连接
+    # 查询员工及其领导的姓名
+    select e1.ename,e2.ename from emp e1,emp e2 where e1.mgr = e2.empno;  
+
+ 
+ 3. 查询编号为7788的员工所在部门的名称
+   1.连接查询
+   2.其他方式?(分步)
+ 
+  
+4.powerdesinger: 数据库设计
+  安装 --> (PRC) --> 破解
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  

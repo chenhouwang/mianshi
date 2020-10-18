@@ -1,0 +1,99 @@
+select * from users where user_no='1900958420'
+
+select * from china where c_id = '104002005'
+
+
+
+
+
+
+
+select * from china where superior_c_id = 0
+
+select c1.c_id d_id,c1.c_name dname,c2.c_id p_id,c2.c_name p_name from china c2,
+ (select * from china where superior_c_id = 0) c1
+ where c2.superior_c_id = c1.c_id
+ 
+ select c.*,c3.c_id c_id,c3.c_name c_name from china c3, 
+ (select c1.c_id d_id,c1.c_name dname,c2.c_id p_id,c2.c_name p_name from china c2,
+ (select * from china where superior_c_id = 0) c1
+ where c2.superior_c_id = c1.c_id) c
+ where c3.superior_c_id = c.p_id;	
+ 
+
+
+
+# 求每个城市的销售额
+select p_name,c_name,sum(amount) sales,
+ sum(price*amount) sales_e from product
+ inner join order_detail on product.pid = order_detail.pid
+ inner join users on users.user_no = order_detail.user_no
+ inner join china_orgin_dim on users.c_id = china_orgin_dim.c_id
+ group by p_name,c_name
+
+
+
+select concat('等级:',grade) level from age_level;
+
+
+
+#  3.
+  YEAR_MONTH 年和月
+	
+	
+	select extract(YEAR_MONTH from order_date) as period,sum(amount) as amount
+    from order_detail group by period
+
+ select extract(YEAR_MONTH from (DATE_ADD(order_date,INTERVAL 1 MONTH))) as period,sum( amount) as amount 
+   from order_detail group by period
+	 
+	 
+	 
+	 
+	 select * from 
+	  (select extract(YEAR_MONTH from order_date) as period,sum(amount) as amount
+    from order_detail
+    group by period) as thisMonth
+    left join
+    (select extract(YEAR_MONTH from (DATE_ADD(order_date,INTERVAL 1 MONTH))) as period,sum(amount) as amount
+    from order_detail
+    group by period) as lastMonth
+    on thisMonth.period=lastMonth.period
+	 
+	 
+	 
+	 
+	 show engines;
+	 
+	 
+	 
+	 show variables like '%autocommit%';
+	 
+	 
+	# 存储过程
+  delimiter //;
+	create procedure sel_name(eno int,out e_name varchar(20))
+	begin
+	  select ename into e_name from emp where empno = eno;
+	end //;
+	
+
+  call sel_name(7788,@ename);
+	select @ename;
+	
+
+	 
+	 
+
+
+
+
+
+
+
+
+
+ 
+ 
+
+

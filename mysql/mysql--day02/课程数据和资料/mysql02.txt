@@ -1,0 +1,201 @@
+1.数据库: DataBase(DB)
+  按照数据结构存储数据的仓库
+2.数据库管理系统: DBMS
+  操纵和管理数据库的软件
+3.分类
+  关系型的数据库管理系统: RDBMS
+    关系模型(表格)
+	mysql/oracle
+  非关系型的数据库管理系统: Nosql
+    补充
+	redis/HBase/Mongodb/neo4j等
+4.sql
+  结构化查询语言: 通用语言
+5.分类
+  DDL:数据定义语言(结构)   create / alter / drop
+  DML: 数据操纵语言(数据)  insert / update / delete
+  DQL: 数据查询语言(数据)
+  TCL: 事务控制语言
+  DCL: 数据控制语言 -- linux(mysql -- 远程连接mysql server)  
+
+6.DDL
+  1. 数据库操作
+    create database dbname;
+	drop database dbname;
+  2.表操作
+    1.create table tname(
+	   字段名称 字段类型(长度),
+	   字段名称 字段类型(长度)...
+	);  
+	 数据类型(mysql):
+	   1.数值
+	     int: 4    -21~21
+		 float(m,n)
+		 double(m,n)
+		 decimal(m,n): 涉及到金钱
+	   2.字符串
+	     char(n): 定长
+	     varchar(n): 可变长
+	   3.日期类型
+	     date
+		 time
+		 datetime
+		 timestamp
+	2.表结构的修改
+      添加字段	
+	  alter table tname add 字段名称 字段类型 first|after;
+	  
+	  修改字段(字段名称,字段类型,长度,约束,位置等)
+	  alter table tname change 旧字段 新字段 类型 first|after;
+	  alter table tname modify 字段 类型 first|after;    # modify不能修改字段的名字
+      
+	  删除字段:
+	  alter table tname drop 字段;
+  
+      修改表名:
+	  rename table tname to stu;
+	  
+	  清空表:
+	  truncate table tname;    # 表中数据删除，但是结构还在
+  
+   3.表销毁
+      drop table tname;    # 表的数据和结构都不在了，即表完全消失了
+  
+7.数据的完整性
+  数据的准确性和可靠性
+  
+  7.1 实体完整性: 记录之间是准确的不重复的
+    1. 主键约束:  primary key 
+	    唯一并且不能为空
+		(1) 表不存在
+		方式一：
+		create table student(
+			sid int primary key,
+			sname varchar(20),
+			birthday date
+        );
+	    方式二：
+		 create table student(
+			sid int,
+			sname varchar(20),
+			birthday date,
+			primary key(sid)
+	    );
+	    (2)表已经存在(alter方式)
+	    alter table student add constraint PK_SID primary key(sid);
+      
+	    注意:
+	     1.每张表都必须有主键
+		 2.每张表有且只有一个主键,但是可以有联合主键(多个字段)
+		    方式一无法创建联合主键，方式二和alter方式可以
+			创建方式：
+			    方式二：
+				 create table student(
+					sid int,
+					sname varchar(20),
+					birthday date,
+					primary key(sid，sname)
+				 );
+				alter方式：
+				 alter table student add constraint PK_SID primary key(sid，sname);
+		 3.一般不把业务字段当做主键
+		 
+		销毁主键:
+        alter table student drop primary key;
+		 
+		 
+	2. 唯一约束:  unique(字段的值唯一)	
+        创建表时声明唯一约束
+		create table user(
+			userid int primary key,
+			username varchar(20),
+			card varchar(18) unique,
+		);
+		create table user(
+			userid int primary key,
+			username varchar(20),
+			card varchar(18),
+			unique(card) 
+		);
+
+		修改表结构添加唯一约束
+		alter table user add CONSTRAINT UN_CAED unique(card);
+
+		销毁唯一约束:
+		drop unique index UN_CARD on user;	
+  
+    3. 主键自增: auto_increment
+	   从1开始,每次增加1
+	    create table user(
+		userid int primary key auto_increment,
+		username varchar(20),
+		card varchar(18)
+		);
+	
+  7.2 域完整性: 字段值正确
+  
+      create table userinfo(
+	   uid int primary key auto_increment,
+	   username varchar(20) not null,
+	   sex bit(1) default 1
+      );
+
+  7.3 引用完整性: 参照完整性
+     外键约束: foreign key
+       A表外键的取值依赖于B表主键的取值,主外键的关联。
+	   注意：创建外键关联时，被关联的另一张表的那个字段要是主键
+	   alter table student add constraint FK_CID foreign key(cid) references classroom(cid);
+     	 
+   
+ 8. 增删改
+   添加:
+     insert into tname values(val1,val2,...);    # 所有字段
+     insert into tname[(col1,col2...)] values(val1,val2...);    # 指定字段
+	 # 批处理
+	 insert into tname[(col1,col2,...)] values(val1,val2...)(val1,val2...)(val1,val2...)...;
+
+	 # 复制表(把另外一张表的结构给复制到新创建的表)
+	 create table tname select * from userinfo where 0;
+	 # 把另外一张表的所有记录复制到新的表
+	 insert into tname select * from userinfo;
+     # 上面两条语句可以合并到依据，即表结构和记录全部复制到新的表
+     create table tname selecr * from userinfo;	 
+	 
+   修改:
+     update tname set col1=val1,col2=val2 [where];
+     例如：
+	 update userinfo set sex=0 where uid=3; 
+
+   删除:   
+     delete from tname [where];
+	 例如：
+	 delete from userinfo where uid=4;
+	 注意：
+	 delete不会重置自增,逐行删除
+	 truncate: 清空(重置自增)
+   
+******面试题：drop、delete、truncate三者区别
+1、对于表结构来说，truncate清空表时只会把记录删除，不会删除表结构；而drop会把表结构和记录全部删除。
+2、如果表中字段设置自增的约束条件，用delete删除表中记录时，不会重置自增，下一条增加的记录会在原来的基础上增加；
+   而truncate清空表后，会重置自增，即下一条记录会重新开始。
+
+ 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+	
+  

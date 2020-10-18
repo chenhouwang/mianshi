@@ -1,0 +1,174 @@
+连接查询和子查询
+  1.连接查询 -->  条件/结果（分布于多张表/一张表）
+      思想: 将所有的条件和结果所在的表通过关联字段连接成一张更大的表
+	        从更大的表之后筛选
+			
+			
+  2.子查询  -->  结果只在一张表
+      思想: 尽可能将条件和结果放到一张表
+
+    查询7788的员工所在部门的名称 dept	  
+       
+	   1. 在emp表根据empno查询deptno
+	   2. 在dept表根据deptno-->dname
+	
+  3. 连接查询和子查询一起用
+       减少链接的记录数
+	   
+	   
+1. 统计各个城市销售额的前10名
+   pid   pname  cid  cname  sales  sales_e  rank
+   
+   销售额:  
+      销量 * 价格 (pid:商品编号)
+	  order_detail : amount
+	  product: price
+	  
+   各个城市:  每件商品属于哪个地方
+      order_detail
+	  users
+	  china_orgin_dim
+
+    
+	1.1 先整理维度表(china)
+	  d_id  d_name p_id p_name c_id c_name
+	 
+	1.2 销售额
+	
+	   
+	  sum(price*amount) 
+	   
+	  order_detail
+	  product
+	  users
+	  china_orgin_dim
+	  
+	  group by d_name,p_name
+	  
+	  
+	1.3 排序取前10  
+
+
+
+2. 统计不同年龄层次的消费及其占比情况
+   年龄层次    消费量    消费额    占比
+
+  2.1 年龄层次
+     age_level: 划分等级
+	 
+  
+  2.2 计算每个人的消费,根据年龄层级分组累加
+  
+     sum(amount*price)
+	 
+  
+     users
+     order_detail    amount: 销量
+	 product         price: 价格
+     age_level
+	 
+	 group by grade
+  
+  
+  2.3 每个年龄层次的消费/总消费
+     
+     总消费:   sum(amount*price)  ---  order_detail / product
+   
+
+3.统计2018年度月销售量及环比变化比例
+
+    年月  上个月销量 本月的销量  环比变化 
+
+    1.1 本月的销量和上月及其销量连接
+	
+	
+
+
+
+
+
+
+
+
+order_detail：
+   03
+   04
+   05 
+   
+   
+order_detail：
+   03+1   04   上个月
+   04+1   05   上个月
+   05+1   06
+      
+
+
+
+
+
+
+
+
+
+
+
+account:账户表
+  aid     aname     money
+  1       zs        1000
+  2       ls        1000
+  
+转账:
+  update money = money - 100 from account  where aname = 'zs';
+  update money = money + 100 from account  where aname = 'ls';
+
+  
+
+
+
+
+存储过程:
+ create procedure proName(参数)
+ begin
+   一组sql命令;
+ end;
+
+
+
+# hdfs:海量数据存储
+  1. linux搭建 --> 3台 + (集群)  克隆
+    linux命令
+  2. hadoop(hdfs)
+    1. 修改文件
+	2. 发送到3台机器
+	3. 格式化namenode(目录)
+	4. start-dfs.sh
+     
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	   

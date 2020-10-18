@@ -1,0 +1,127 @@
+# 数学函数
+select abs(-10);
+select ceil(-10.5);  # 向上取整  -10
+select floor(-10.5); # 向下取整  -11
+select RAND(); #取随机数
+select round(12.46,-1); #四舍五入
+
+# 字符函数
+select length('abc'); #获取字符串的长度
+select length(ename) from emp;
+
+# 日期函数
+select NOW();
+select CURRENT_DATE();
+select CURRENT_TIME();
+select CURRENT_TIMESTAMP();
+
+select YEAR(NOW());
+select YEAR('2018-08-08');
+select MONTH(NOW());
+select DAY(NOW());
+
+# 日期计算函数
+select DATE_ADD(NOW(),interval -2 WEEK);  #不能使用组合
+select DATE_ADD('2019-03-02',interval 5 day);
+
+select LAST_DAY('2016-02-03'); #获取给定日期月的最后一天
+
+# 聚合函数
+select max(sal) from emp;
+select min(sal) from emp;
+select avg(sal) from emp;
+select sum(sal) from emp;
+# 求总记录数
+select count(*) from emp;
+select count(1) from emp;
+# 求字段的个数(非空)
+select count(comm) from emp;
+
+
+
+
+# 每个部门的平均工资
+select deptno,avg(sal) from emp group by deptno;
+
+# 平均工资>2000的部门的编号及其平均工资。
+  # 1.求出每个部门的平均工资
+	# 2.从平均工资中找出超过2000
+select deptno,avg(sal) sal from emp group by deptno having sal > 2000;
+
+
+# 加密函数
+select md5('root');
+
+# 流程函数  >=60  A  <60  B
+select sname,
+case 
+  when score >= 60 then 'A'
+	when score < 60 then 'B'
+end level
+from student;
+
+select if(1>2,1,2);
+
+select ifnull(comm,0) from emp;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 查询所有的员工的姓名emp及其所在部门的名称dept(分布于多张表)
+  select * from emp,dept where emp.deptno = dept.deptno;
+	select * from dept inner join emp on emp.deptno = dept.deptno;
+  select * from emp inner join dept using(deptno);	 
+
+
+
+select * from emp left join dept on emp.deptno = dept.deptno;
+
+select * from dept left join emp on emp.deptno = dept.deptno;
+
+
+
+
+# 自连接
+select e1.ename,e2.ename from emp e1,emp e2 
+where e1.mgr = e2.empno;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,147 @@
+1.介绍
+  李老师
+  
+2.存储
+  1.mysql数据库管理系统
+  2.海量数据的储存解决方案-HDFS(Linux平台)
+    -- Linux课程(基本命令使用)
+
+3.数据库管理系统 
+  1.什么是数据库
+    DataBase(DB)
+	  按照数据结构存储数据的仓库。
+	     仓库: 存储数据
+		 数据结构: 程序=数据结构+算法
+			底层文件的组织方式(结构不同,存储和查询的效率区别)
+  2.什么是数据库管理系统  
+    DBMS: 操纵和管理数据库的一套软件。
+	
+  3.数据库管理系统分类
+    1.关系型的数据库管理系统(RDBMS - relationship)
+	  利用关系模型(二维表格的形式(表),行称为记录,列称为字段)存储和管理数据 
+	  数据量少,数据的关系比较简单,并发量低(io瓶颈,底层文件形式存储)
+	  
+	  Oracle数据库:oracle(甲骨文) 大型的分布式的数据库管理系统
+	             闭源收费,产品免费服务收费(去ioe)  传统/国企
+				 
+	  Mysql数据库: Oracle,开源免费的中小型的数据库管理系统
+
+	  sql server: microsoft,中小型数据库	
+	  
+	2.非关系型的数据库管理系统(Nosql: Not only sql)  
+	  高并发和海量数据 -- 弥补  
+	  redis (键值数据库/内存) /  HBase  / MongoDB  / Neo4J(社交 -- 人脉资源(一度人脉))  图
+	  
+	  
+4.Mysql数据库管理系统
+  1.什么是mysql数据库
+    开源免费的关系型的数据库管理系统
+    	
+    mysql数据库管理系统中 --- 可以管理多个数据库(隔离业务)
+	                      --- 一个数据库存储多张表(table)
+						  
+	mysql支持千万级别数据
+        
+  
+  2.下载并安装
+    http://www.mysql.com
+	http://www.oracle.com
+	
+	安装:
+	   mysql server: 必选   (services.msc)
+	   
+	 C:\Program Files\MySQL\MySQL Server 5.7: mysql数据库管理系统软件的安装目录(默认)
+	 
+	 win7: 组织 --> 文件夹和搜索选项 --> 查看 --> 显示隐藏文件夹xxx
+	 win10: 
+	 
+    C:\ProgramData\MySQL\MySQL Server 5.7: mysql数据库数据存储的位置和配置存储的位置
+        my.ini: mysql的配置
+		Data: 数据存储目录
+		     每一个目录代表就是一个数据库/底下的文件代表该数据库中存在的表
+			 
+	   
+  3.如何发送命令
+    1.命令行
+      连接(登录)数据库:  mysql -uroot -p(密码: 安装时设置过密码)
+	        
+	  展示所有的数据库:  show databases;		
+	  
+	  选择数据库: use mydb;
+	  
+      展示表: show tables;
+	  
+
+    2.图形界面软件	
+	  navicat / sqlyog / workbench
+	  
+
+5. sql
+  结构化查询语言,关系型数据库管理系统的通用语言
+     dbms利用sql管理db
+	 
+  1)根据功能分类
+    DDL: 数据定义语言(数据库对象结构 -- 数据库,表等)
+	   create   / alter    /  drop
+	DML: 数据操纵语言(数据)
+	   insert  / update   / delete
+	DQL: 数据查询语言(数据)   *
+	   select
+	TCL: 事务控制语言 
+	  commit  / rollback
+	DCL: 数据控制语言(权限)
+	  grant  / revoke
+  
+  2) 数据库操作(DDL)
+     1.创建数据库
+	    create database [if not exists] 1909da;
+	 2.销毁数据库
+        drop database [if exists] 1909da;
+  3) 表的操作
+     表: 利用关系模型存储数据的数据结构
+	     行 --- 记录
+		 列 --- 字段
+     1.创建表(声明字段)
+       create table tname(
+	      colname coltype 约束,
+		  colname coltype 约束...
+	   );
+       
+      数据类型(内存分配):  
+	      单位: 字节Byte
+		    bit(比特)  0/1
+			
+		  1 Byte = 8 bit
+		  1 KB = 1024 Byte
+		  1 MB = 1024 KB  ....
+		  
+		1.数值类型
+          整数:
+		    TINYINT      1     2^8
+			SMALLINT     2
+			MEDIUMINT   3
+			INT         4      2^32 -------  -2^31  ~  2^31-1(21亿)
+			BIGINT      8
+          浮点数:		
+            float(m,n)  4  m代表总长度,n代表小数点位数
+            double(m,n)	8		
+		    
+		  金额:
+            decimal(m,n)		  
+		   
+        2.字符类型
+		   char(n):  固定长度字符串
+		   varchar(n): 可变长度字符串(最长长度)
+
+        3.日期类型
+		  date
+		  time
+		  datetime: 年月日时分秒  0000 - 9999
+		  timestamp: 时间戳(年月日时分秒)  1970 - 2038
+		
+        4.其他类型		
+		  blob: 二进制数据
+		  text: 大文本
+		  json/enum/set
+	    	  
+		    

@@ -1,0 +1,57 @@
+# 查询编号为7788的员工所在的部门名称  
+  # 1. 连接表
+	select dname from emp,dept where emp.deptno = dept.deptno and empno = 7788;
+	# 2. 其他思路:
+	  # 1.在emp表中查询7788所在的部门的编号
+		select deptno from emp where empno = 7788;
+		# 2.在dept根据编号查询所在部门的名称
+		select dname from dept where deptno = 20;
+		
+		select dname from dept where deptno = (select deptno from emp where empno = 7788)
+		
+
+# 2. 薪水>2000的员工所在的部门的名称
+	select dname from dept where deptno  =any(
+	select distinct deptno from emp where sal > 2000);
+
+  
+# 3.查询薪水超过所在部门平均工资的员工信息
+ select emp.* from emp,( select deptno,avg(sal) avg from emp group by deptno) e
+ where emp.deptno = e.deptno and sal > avg;
+ 
+
+ select * from emp e1 where sal > (select avg(sal) from emp e2 where e2.deptno = e1.deptno)
+
+
+# 2. 薪水>2000的员工所在的部门的名称
+	select dname from dept where deptno  =any(
+	select distinct deptno from emp where sal > 2000);
+
+
+ select dname from dept where exists(
+ select * from emp where sal > 2000 and emp.deptno = dept.deptno);
+
+	
+	
+	
+#查询20号部门或者工资>2000的员工信息
+select * from emp where deptno = 20 or sal > 2000;
+
+select * from emp where deptno = 20
+union all
+select * from emp where sal > 2000
+
+
+
+
+	
+	
+	
+
+
+
+
+
+
+
+

@@ -1,0 +1,80 @@
+1.连接查询
+  1.1 内连接 inner join ... on...
+    连接顺序无关,多张表匹配的记录出现
+	
+  1.2 外连接 left/right [outer] join ... on ...
+    连接顺序有关,遍历主表,在从表匹配
+  
+  1.3 自连接
+    自身连接自身
+	
+2. 子查询
+  嵌套查询
+  # 查询编号为7788的员工所在的部门名称  
+  select dname from dept where deptno = (select deptno from emp where empno = 7788)  
+  	
+  2.1 子查询分类
+     1) 单行子查询: 子查询返回的结果单行
+	 
+     2) 多行子查询: 子查询返回的结果是多行	 
+	    in   
+		any:  =any:相当于in    >any: 大于最小值   <any: 小于最大值
+		all:  >all: 大于最大值  <all:小于最小值   
+		
+		# 查询30号部门工资次高的员工信息
+		
+  2.2 案例:
+      1. 查询薪水超过所在部门平均工资的员工信息
+        # 采用连接
+		   select emp.* from emp,(select deptno,avg(sal) avg from emp group by deptno) e
+		   where emp.deptno = e.deptno and sal > avg;
+		# 采用子查询
+		   select * from emp e1 where sal > (select avg(sal) from emp e2 where e2.deptno = e1.deptno)
+		   1. 主查询传递deptno给子查询
+		   2. 子查询根据传递的deptno查询出所在部门的平均工资返回给主查询
+		   3. 主查询根据子查询返回的部门平均工资来处理后续
+		   
+	  2. 薪水>2000的员工所在的部门的名称
+   	  
+	    # 先执行子查询再执行主查询
+		select dname from dept where deptno in (select distinct deptno from emp where sal > 2000);    
+		   
+	    # 只考虑记录匹配
+         select dname from dept where exists(select * from emp where sal > 2000 and emp.deptno = dept.deptno);	
+
+         exists考虑的是匹配的问题:
+		   先执行主查询,将主查询的记录依次交给子查询进行匹配,如果能够匹配则子查询返回true,主查询的结果显示在结果集；
+		   否则不显示。
+		 
+3. 联合查询
+  union: 并集，所有的内容都查询，重复的显示一次
+  union all: 并集，所有的内容都显示，包括重复的
+	   
+	    
+4. 3c案例
+   #  统计各个城市3c产品销售额的前10名
+   
+     province   city   sale   sales_e   rate
+	 
+	 
+	 
+    # 1. 临时表
+	 关联省份和城市
+	  
+	   
+	
+	
+   
+
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
+	   
